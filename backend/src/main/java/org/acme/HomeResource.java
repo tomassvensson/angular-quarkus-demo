@@ -21,6 +21,12 @@ public class HomeResource {
     @GET
     @Produces(MediaType.TEXT_HTML)
     public TemplateInstance get() {
-        return home.data("identity", identity);
+        String name = identity.getPrincipal().getName();
+        if (name == null || name.isEmpty()) {
+            name = "User"; // Fallback
+        }
+        return home.data("identity", identity)
+                   .data("displayName", name)
+                   .data("groups", identity.getRoles());
     }
 }
