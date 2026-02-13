@@ -6,9 +6,7 @@ import io.smallrye.mutiny.Uni;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 import java.net.URI;
@@ -39,12 +37,12 @@ public class LogoutResource {
     @ConfigProperty(name = "cognito.domain")
     String cognitoDomain;
 
+    @ConfigProperty(name = "app.frontend-base-url")
+    String frontendBaseUrl;
+
     @GET
-    public Uni<Response> logout(@Context UriInfo uriInfo) {
-        // Build base URL dynamically from request (handles port 8080 dev / 8081 test)
-        URI baseUri = uriInfo.getBaseUri();
-        String baseUrl = baseUri.getScheme() + "://" + baseUri.getAuthority();
-        String logoutUri = URLEncoder.encode(baseUrl + "/", StandardCharsets.UTF_8);
+    public Uni<Response> logout() {
+        String logoutUri = URLEncoder.encode(normalizedBaseUrl(), StandardCharsets.UTF_8);
 
         // Cognito logout format: https://<domain>/logout?client_id=<id>&logout_uri=<uri>
         String cognitoLogoutUrl = "https://" + cognitoDomain + "/logout"
@@ -60,5 +58,9 @@ public class LogoutResource {
         }
         // Already logged out — redirect to Cognito anyway to clear SSO session
         return Uni.createFrom().item(Response.seeOther(URI.create(cognitoLogoutUrl)).build());
+    }
+
+    private String normalizedBaseUrl() {
+        return frontendBaseUrl.endsWith("/") ? frontendBaseUrl : frontendBaseUrl + "/";
     }
 }
