@@ -22,22 +22,22 @@ import { GraphqlApiService } from '../services/graphql-api.service';
         <p class="muted">Loading...</p>
       } @else {
         <form class="form-grid" (ngSubmit)="save()">
-          <div>
+          <div class="detail-card">
             <label for="username">Username</label>
             <input id="username" [value]="username()" disabled />
           </div>
 
-          <div>
+          <div class="detail-card">
             <label for="email">Email</label>
             <input id="email" [(ngModel)]="email" name="email" />
           </div>
 
-          <div class="row">
+          <div class="row detail-card">
             <input id="enabled" type="checkbox" [(ngModel)]="enabled" name="enabled" />
             <label for="enabled">Enabled</label>
           </div>
 
-          <div>
+          <div class="detail-card">
             <label>Group membership</label>
             <div class="group-grid">
               @for (group of availableGroups(); track group) {
@@ -101,7 +101,13 @@ export class UserEditPageComponent implements OnInit {
           this.selectedGroups = [...(user.groups ?? [])];
           this.saved.set(true);
         },
-        error: (err: Error) => this.error.set(err.message || 'Could not save user')
+        error: (err: Error) => {
+          if (err.message === 'AUTH_REQUIRED') {
+            globalThis.location.assign('/');
+            return;
+          }
+          this.error.set(err.message || 'Could not save user');
+        }
       });
   }
 
@@ -122,7 +128,13 @@ export class UserEditPageComponent implements OnInit {
   private loadAvailableGroups(): void {
     this.api.groups().subscribe({
       next: (groups) => this.availableGroups.set(groups),
-      error: () => this.availableGroups.set([])
+      error: (err: Error) => {
+        if (err.message === 'AUTH_REQUIRED') {
+          globalThis.location.assign('/');
+          return;
+        }
+        this.availableGroups.set([]);
+      }
     });
   }
 
@@ -138,6 +150,10 @@ export class UserEditPageComponent implements OnInit {
         this.loading.set(false);
       },
       error: (err: Error) => {
+        if (err.message === 'AUTH_REQUIRED') {
+          globalThis.location.assign('/');
+          return;
+        }
         this.error.set(err.message || 'Could not load user');
         this.loading.set(false);
       }

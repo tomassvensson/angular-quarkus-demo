@@ -1,6 +1,6 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, map, throwError } from 'rxjs';
 
 export interface CurrentUser {
   username: string;
@@ -121,15 +121,23 @@ export class GraphqlApiService {
 
   private execute<T>(query: string, variables?: Record<string, unknown>): Observable<T> {
     return this.http
-      .post<GraphqlResponse<T>>(
+      .post(
         this.endpoint,
         { query, variables },
         {
-          withCredentials: true
+          withCredentials: true,
+          responseType: 'text'
         }
       )
       .pipe(
-        map((response) => {
+        map((rawBody) => {
+          let response: GraphqlResponse<T>;
+          try {
+            response = JSON.parse(rawBody) as GraphqlResponse<T>;
+          } catch {
+            throw new Error('AUTH_REQUIRED');
+          }
+
           if (response.errors?.length) {
             throw new Error(response.errors[0].message);
           }
@@ -137,7 +145,25 @@ export class GraphqlApiService {
             throw new Error('No GraphQL data returned');
           }
           return response.data;
+        }),
+        catchError((error: unknown) => {
+          if (this.isAuthError(error)) {
+            return throwError(() => new Error('AUTH_REQUIRED'));
+          }
+          return throwError(() => (error instanceof Error ? error : new Error('Unknown GraphQL error')));
         })
       );
+  }
+
+  private isAuthError(error: unknown): boolean {
+    if (error instanceof Error && error.message === 'AUTH_REQUIRED') {
+      return true;
+    }
+
+    if (error instanceof HttpErrorResponse) {
+      return error.status === 401 || error.status === 403;
+    }
+
+    return false;
   }
 }

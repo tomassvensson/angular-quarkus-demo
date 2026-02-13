@@ -16,6 +16,9 @@ import { CognitoUserPage, GraphqlApiService } from '../services/graphql-api.serv
       }
 
       <div class="table-wrap users-table-wrap">
+        @if (loading()) {
+          <div class="table-overlay">Loading users...</div>
+        }
         <table class="users-table">
           <thead>
             <tr>
@@ -75,6 +78,7 @@ export class AdminUsersPageComponent implements OnInit {
 
   protected readonly pageData = signal<CognitoUserPage | null>(null);
   protected readonly error = signal('');
+  protected readonly loading = signal(false);
   protected readonly page = signal(0);
   protected readonly size = signal(10);
   protected readonly sortBy = signal('username');
@@ -130,10 +134,34 @@ export class AdminUsersPageComponent implements OnInit {
   }
 
   private load(): void {
+    const loadStartedAt = Date.now();
+    const minOverlayMs = 220;
+
+    const finishLoading = () => {
+      const elapsed = Date.now() - loadStartedAt;
+      const wait = Math.max(0, minOverlayMs - elapsed);
+      if (wait === 0) {
+        this.loading.set(false);
+        return;
+      }
+      globalThis.setTimeout(() => this.loading.set(false), wait);
+    };
+
+    this.loading.set(true);
     this.error.set('');
     this.api.users(this.page(), this.size(), this.sortBy(), this.direction()).subscribe({
-      next: (result) => this.pageData.set(result),
-      error: (err: Error) => this.error.set(err.message || 'Could not load users')
+      next: (result) => {
+        this.pageData.set(result);
+        finishLoading();
+      },
+      error: (err: Error) => {
+        finishLoading();
+        if (err.message === 'AUTH_REQUIRED') {
+          globalThis.location.assign('/');
+          return;
+        }
+        this.error.set(err.message || 'Could not load users');
+      }
     });
   }
 }
