@@ -87,3 +87,9 @@ Thumbs.db
 **/.env
 **/.env.*
 !**/.env.example
+
+### LocalStack runtime artifacts
+.github/localstack/.localstack/
+
+
+**/test_output*.txt

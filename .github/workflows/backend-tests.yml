@@ -1,0 +1,49 @@
+name: backend-tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: eu-central-1
+      ENDPOINT_URL: http://localhost:4566
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Start Keycloak
+        run: docker compose -f .github/keycloak/docker-compose.keycloak.yml up -d
+
+      - name: Wait for Keycloak
+        run: |
+          timeout 300 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:9090/realms/quarkus)" != "200" ]]; do sleep 5; done' || false
+
+      - name: Run backend tests
+        working-directory: backend
+        env:
+          # Tests use %test profile which points to Keycloak
+          JUNIT_JUPITER_TAGS_EXCLUDE: "" # Run all tests including external-auth
+        run: |
+          chmod +x ./mvnw
+          ./mvnw test
+
+      - name: Stop Keycloak
+        if: always()
+        run: |
+          docker compose -f .github/keycloak/docker-compose.keycloak.yml down -v --remove-orphans

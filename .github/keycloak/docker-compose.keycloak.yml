@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.1
+    container_name: angular-quarkus-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_DB: dev-file
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "9090:8080"
+    volumes:
+      - ./realm-export.json:/opt/keycloak/data/import/realm.json

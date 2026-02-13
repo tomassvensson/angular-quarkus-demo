@@ -1,0 +1,86 @@
+{
+  "realm": "quarkus",
+  "enabled": true,
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alice"
+        }
+      ],
+      "realmRoles": [
+        "user"
+      ],
+      "clientRoles": {
+        "angular-quarkus-client": [
+          "user"
+        ]
+      },
+      "email": "alice@example.com",
+      "firstName": "Alice",
+      "lastName": "User",
+      "emailVerified": true
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin"
+        }
+      ],
+      "realmRoles": [
+        "admin",
+        "user"
+      ],
+      "clientRoles": {
+        "angular-quarkus-client": [
+          "admin",
+          "user"
+        ]
+      },
+      "email": "admin@example.com",
+      "firstName": "Admin",
+      "lastName": "User",
+      "emailVerified": true
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "user",
+        "description": "User role"
+      },
+      {
+        "name": "admin",
+        "description": "Admin role"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "angular-quarkus-client",
+      "enabled": true,
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "secret",
+      "redirectUris": [
+        "http://localhost:8080/*",
+        "http://localhost:4200/*",
+        "http://localhost:8081/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false
+    }
+  ]
+}

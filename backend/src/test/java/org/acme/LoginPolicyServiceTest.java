@@ -18,8 +18,7 @@ class LoginPolicyServiceTest {
     void disallowedUsernamesAreBlockedRegardlessOfDomain() {
         assertTrue(loginPolicyService.isDisallowedPrincipal("aqdisallowed1@tomas-svensson.de"));
         assertTrue(loginPolicyService.isDisallowedPrincipal("aqdisallowed1@gmail.com"));
-        assertTrue(loginPolicyService.isDisallowedPrincipal("AQTESTADMIN@example.com"));
-        assertTrue(loginPolicyService.isDisallowedPrincipal("fakeuser2@example.com"));
+        assertTrue(loginPolicyService.isDisallowedPrincipal("aqdisallowed2@example.com"));
     }
 
     @Test

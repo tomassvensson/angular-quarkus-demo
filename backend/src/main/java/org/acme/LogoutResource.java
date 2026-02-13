@@ -34,30 +34,46 @@ public class LogoutResource {
     @ConfigProperty(name = "quarkus.oidc.client-id")
     String clientId;
 
-    @ConfigProperty(name = "cognito.domain")
+    @ConfigProperty(name = "cognito.domain", defaultValue = "undefined")
     String cognitoDomain;
+
+    @ConfigProperty(name = "auth.provider", defaultValue = "cognito")
+    String authProvider;
+    
+    @ConfigProperty(name = "quarkus.oidc.auth-server-url", defaultValue = "")
+    String authServerUrl;
 
     @ConfigProperty(name = "app.frontend-base-url")
     String frontendBaseUrl;
 
     @GET
     public Uni<Response> logout() {
-        String logoutUri = URLEncoder.encode(normalizedBaseUrl(), StandardCharsets.UTF_8);
+        String logoutUrl;
+        
+        if ("keycloak".equals(authProvider)) {
+            // Keycloak simple logout redirect
+            // Ideally we'd use the end_session_endpoint from OIDC metadata, but we can approximate:
+             logoutUrl = authServerUrl + "/protocol/openid-connect/logout?post_logout_redirect_uri=" 
+                         + URLEncoder.encode(normalizedBaseUrl(), StandardCharsets.UTF_8)
+                         + "&client_id=" + clientId;
+        } else {
+             String logoutUri = URLEncoder.encode(normalizedBaseUrl(), StandardCharsets.UTF_8);
 
-        // Cognito logout format: https://<domain>/logout?client_id=<id>&logout_uri=<uri>
-        String cognitoLogoutUrl = "https://" + cognitoDomain + "/logout"
-                + "?client_id=" + clientId
-                + "&logout_uri=" + logoutUri;
+            // Cognito logout format: https://<domain>/logout?client_id=<id>&logout_uri=<uri>
+            logoutUrl = "https://" + cognitoDomain + "/logout"
+                    + "?client_id=" + clientId
+                    + "&logout_uri=" + logoutUri;
+        }
 
         // Use OidcSession.logout() to properly clear all OIDC session cookies,
-        // then redirect to Cognito's logout endpoint to end the SSO session.
+        // then redirect to Identity Provider's logout endpoint.
         if (!identity.isAnonymous()) {
             return oidcSession.logout()
-                    .onItem().transform(v -> Response.seeOther(URI.create(cognitoLogoutUrl)).build())
-                    .onFailure().recoverWithItem(Response.seeOther(URI.create(cognitoLogoutUrl)).build());
+                    .onItem().transform(v -> Response.seeOther(URI.create(logoutUrl)).build())
+                    .onFailure().recoverWithItem(Response.seeOther(URI.create(logoutUrl)).build());
         }
-        // Already logged out — redirect to Cognito anyway to clear SSO session
-        return Uni.createFrom().item(Response.seeOther(URI.create(cognitoLogoutUrl)).build());
+        // Already logged out — redirect anyway
+        return Uni.createFrom().item(Response.seeOther(URI.create(logoutUrl)).build());
     }
 
     private String normalizedBaseUrl() {

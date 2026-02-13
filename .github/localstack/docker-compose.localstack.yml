@@ -1,0 +1,15 @@
+version: '3.8'
+services:
+  localstack:
+    image: localstack/localstack:3.8
+    container_name: angular-quarkus-localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=cognito-idp,ssm
+      - AWS_DEFAULT_REGION=us-east-1
+      - PROVIDER_OVERRIDE_COGNITO_IDP=legacy
+      - DOCKER_HOST=unix:///var/run/docker.sock
+    volumes:
+      - "./.localstack:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"

@@ -1,0 +1,59 @@
+name: e2e-tests
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Start Keycloak
+        run: docker compose -f .github/keycloak/docker-compose.keycloak.yml up -d
+
+      - name: Wait for Keycloak
+        run: |
+          timeout 300 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:9090/realms/quarkus)" != "200" ]]; do sleep 5; done' || false
+
+      - name: Build Quarkus Backend
+        working-directory: backend
+        run: chmod +x mvnw && ./mvnw package -DskipTests
+
+      - name: Start Quarkus Backend
+        working-directory: backend
+        run: java -Dquarkus.profile=dev -jar target/quarkus-app/quarkus-run.jar &
+
+      - name: Wait for Backend
+        run: |
+          timeout 300 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:8080/hello)" != "200" ]]; do sleep 5; done' || false
+
+      - name: Install Playwright browser
+        working-directory: frontend
+        run: npx playwright install --with-deps chromium
+
+      - name: Run Playwright E2E
+        working-directory: frontend
+        run: npm run e2e

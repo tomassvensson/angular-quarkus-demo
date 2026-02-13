@@ -5,8 +5,11 @@ import org.acme.graphql.model.CognitoUserPage;
 import org.acme.graphql.model.CognitoUserView;
 import org.acme.graphql.model.UpdateUserInput;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClientBuilder;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDisableUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminEnableUserRequest;
@@ -22,11 +25,13 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersRe
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UserType;
 
 import java.time.Instant;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -38,6 +43,15 @@ public class CognitoAdminService {
 
     @ConfigProperty(name = "cognito.user-pool-id")
     String userPoolId;
+
+    @ConfigProperty(name = "aws.endpoint-override")
+    Optional<String> awsEndpointOverride;
+
+    @ConfigProperty(name = "aws.access-key-id", defaultValue = "test")
+    String awsAccessKeyId;
+
+    @ConfigProperty(name = "aws.secret-access-key", defaultValue = "test")
+    String awsSecretAccessKey;
 
     public CognitoUserPage listUsers(int page, int size, String sortBy, String direction) {
         int safePage = Math.max(0, page);
@@ -261,8 +275,15 @@ public class CognitoAdminService {
     }
 
     private CognitoIdentityProviderClient client() {
-        return CognitoIdentityProviderClient.builder()
-                .region(Region.of(awsRegion))
-                .build();
+        CognitoIdentityProviderClientBuilder builder = CognitoIdentityProviderClient.builder()
+            .region(Region.of(awsRegion));
+
+        if (awsEndpointOverride.isPresent() && !awsEndpointOverride.get().isBlank()) {
+            builder.endpointOverride(URI.create(awsEndpointOverride.get().trim()));
+            builder.credentialsProvider(
+                StaticCredentialsProvider.create(AwsBasicCredentials.create(awsAccessKeyId, awsSecretAccessKey)));
+        }
+
+        return builder.build();
     }
 }
