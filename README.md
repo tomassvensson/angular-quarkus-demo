@@ -1,123 +1,185 @@
-# code-with-quarkus
+# Angular + Quarkus + AWS Cognito Demo
 
-This project uses Quarkus, the Supersonic Subatomic Java Framework.
+Full-stack demo application with:
+- Angular frontend (`frontend/`)
+- Quarkus backend (`backend/`)
+- AWS Cognito login/logout and role-based access
+- GraphQL API at `/api/v1/graphql`
 
-If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
+## Architecture
 
-## Running the application in dev mode
+```text
+Browser (Angular @ :4200)
+  -> Sign in/out links -> Quarkus OIDC endpoints (:8080)
+  -> GraphQL queries/mutations (with session cookie) -> /api/v1/graphql
+		-> Quarkus GraphQL + Cognito Admin API
+			 -> AWS Cognito User Pool
+```
 
-You can run your application in dev mode that enables live coding using:
+### Key behavior
+- Backend owns authentication flow and secrets.
+- Frontend uses session-based calls (`withCredentials`) to GraphQL.
+- Role-based menu and admin user management UI.
+- Login policy blocks disallowed usernames via `app.test.disallowed-usernames`.
 
-```shell script
+## Technologies Used
+
+- **Frontend**: Angular 21, TypeScript, Tailwind CSS, Vitest, Playwright
+- **Backend**: Quarkus 3, Java 21, SmallRye GraphQL, OIDC
+- **AWS**: Cognito User Pool + Cognito Admin API (AWS SDK v2)
+- **Build/Test**: Maven Wrapper, npm
+
+## External Dependencies
+
+Install locally:
+- **Java 21**
+- **Node.js 20+** and **npm**
+- **AWS account** with Cognito User Pool configured
+- **AWS credentials** that allow Cognito Admin API access (for admin GraphQL operations)
+
+## Repository Structure
+
+```text
+backend/   Quarkus API + OIDC + GraphQL
+frontend/  Angular UI + Playwright E2E
+```
+
+## Configuration
+
+### Important security note
+Do **not** commit real secrets. Use environment variables or profile-local files for:
+- Cognito client secret
+- any cloud credentials
+
+### Required backend settings
+These are the key values used by the app:
+
+- `quarkus.oidc.auth-server-url`
+- `quarkus.oidc.client-id`
+- `quarkus.oidc.credentials.secret`
+- `cognito.domain`
+- `cognito.user-pool-id`
+- `app.frontend-base-url` (default: `http://localhost:4200`)
+- `app.test.disallowed-usernames` (comma-separated local parts before `@`)
+
+### Environment variable equivalents
+Quarkus properties can be overridden via environment variables. Common ones:
+
+- `QUARKUS_OIDC_AUTH_SERVER_URL`
+- `QUARKUS_OIDC_CLIENT_ID`
+- `QUARKUS_OIDC_CREDENTIALS_SECRET`
+- `COGNITO_DOMAIN`
+- `COGNITO_USER_POOL_ID`
+- `APP_FRONTEND_BASE_URL`
+- `APP_TEST_DISALLOWED_USERNAMES`
+- `AWS_REGION`
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_SESSION_TOKEN` (if using temporary credentials)
+
+## AWS Cognito Setup
+
+Create/use a Cognito User Pool and App Client with:
+
+1. **OAuth flow**: Authorization code grant
+2. **Scopes**: at least `openid`, `email`
+3. **Identity provider**: Cognito user pool directory
+4. **Allowed callback URLs** (local):
+	- `http://localhost:8080/login`
+	- `http://localhost:8080/login/oauth2/code/cognito` (optional compatibility)
+	- `http://localhost:8081/login` (for tests)
+	- `http://localhost:8081/login/oauth2/code/cognito` (optional compatibility)
+5. **Allowed sign-out URLs**:
+	- `http://localhost:4200/`
+	- `http://localhost:8080/`
+	- `http://localhost:8081/`
+6. Create groups used by the app:
+	- `RegularUser`
+	- `AdminUser`
+	- `OwnerUser`
+	- `NoPermissionsTestUser`
+
+## Run Locally
+
+### 1) Start backend
+
+From repo root:
+
+```bash
+cd backend
 ./mvnw quarkus:dev
 ```
 
-> **_NOTE:_**  Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:8080/q/dev/>.
+Backend URL: `http://localhost:8080`
 
-## Packaging and running the application
+### 2) Start frontend
 
-The application can be packaged using:
-
-```shell script
-./mvnw package
-```
-
-It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
-Be aware that it’s not an _über-jar_ as the dependencies are copied into the `target/quarkus-app/lib/` directory.
-
-The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
-
-If you want to build an _über-jar_, execute the following command:
-
-```shell script
-./mvnw package -Dquarkus.package.jar.type=uber-jar
-```
-
-The application, packaged as an _über-jar_, is now runnable using `java -jar target/*-runner.jar`.
-
-## Creating a native executable
-
-You can create a native executable using:
-
-```shell script
-./mvnw package -Dnative
-```
-
-Or, if you don't have GraalVM installed, you can run the native executable build in a container using:
-
-```shell script
-./mvnw package -Dnative -Dquarkus.native.container-build=true
-```
-
-You can then execute your native executable with: `./target/code-with-quarkus-1.0.0-SNAPSHOT-runner`
-
-If you want to learn more about building native executables, please consult <https://quarkus.io/guides/maven-tooling>.
-
-## Provided Code
-
-### REST
-
-Easily start your REST Web Services
-
-[Related guide section...](https://quarkus.io/guides/getting-started-reactive#reactive-jax-rs-resources)
-
-
-# Frontend
-
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.3.
-
-## Development server
-
-To start a local development server, run:
+In another terminal:
 
 ```bash
-ng serve
+cd frontend
+npm install
+npm start
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Frontend URL: `http://localhost:4200`
 
-## Code scaffolding
+### 3) Open in browser
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Start here:
+- `http://localhost:4200`
+
+Login/logout endpoints (backend-handled):
+- `http://localhost:8080/login`
+- `http://localhost:8080/logout`
+
+GraphQL endpoint:
+- `http://localhost:8080/api/v1/graphql`
+
+## Testing
+
+### Backend tests
 
 ```bash
-ng generate component component-name
+cd backend
+./mvnw test
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Includes:
+- API and integration tests
+- GraphQL smoke test
+- login policy tests
+- Playwright-based backend E2E checks
+
+### Frontend unit tests
 
 ```bash
-ng generate --help
+cd frontend
+npm test -- --watch=false
 ```
 
-## Building
-
-To build the project run:
+### Frontend E2E tests (Playwright)
 
 ```bash
-ng build
+cd frontend
+npm run e2e
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+If Playwright browsers are missing:
 
 ```bash
-ng test
+npx playwright install chromium
 ```
 
-## Running end-to-end tests
+## Troubleshooting
 
-For end-to-end (e2e) testing, run:
+- **Login redirect mismatch**: confirm callback/sign-out URLs in Cognito exactly match local ports.
+- **Admin user list fails**: verify AWS credentials and Cognito permissions.
+- **Frontend cannot call API**: ensure backend is running on `:8080` and CORS allows `http://localhost:4200`.
+- **Session issues**: app is configured for long idle extension (`12H`); verify OIDC and browser cookie settings.
 
-```bash
-ng e2e
-```
+## Notes for Production
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+- Move secrets out of `application.properties`.
+- Use environment-specific config/profiles.
+- Restrict `app.test.disallowed-usernames` as part of deployment policy.
