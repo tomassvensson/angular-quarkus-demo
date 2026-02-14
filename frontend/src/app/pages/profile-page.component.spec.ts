@@ -8,8 +8,8 @@ import { By } from '@angular/platform-browser';
 describe('ProfilePageComponent', () => {
   let component: ProfilePageComponent;
   let fixture: ComponentFixture<ProfilePageComponent>;
-  let apiSpy: jasmine.SpyObj<GraphqlApiService>;
-  let routerSpy: jasmine.SpyObj<Router>;
+  let apiSpy: any;
+  let routerSpy: any;
 
   const mockMe = { username: 'alice', email: 'alice@example.com', roles: ['user'] };
   const mockUser = {
@@ -27,12 +27,18 @@ describe('ProfilePageComponent', () => {
   };
 
   beforeEach(async () => {
-    apiSpy = jasmine.createSpyObj('GraphqlApiService', ['me', 'user', 'deleteUser']);
-    routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    apiSpy = {
+      me: vi.fn(),
+      user: vi.fn(),
+      deleteUser: vi.fn()
+    };
+    routerSpy = {
+      navigate: vi.fn()
+    };
 
-    apiSpy.me.and.returnValue(of(mockMe));
-    apiSpy.user.and.returnValue(of(mockUser));
-    apiSpy.deleteUser.and.returnValue(of(true));
+    apiSpy.me.mockReturnValue(of(mockMe));
+    apiSpy.user.mockReturnValue(of(mockUser));
+    apiSpy.deleteUser.mockReturnValue(of(true));
 
     await TestBed.configureTestingModule({
       imports: [ProfilePageComponent],
@@ -58,7 +64,7 @@ describe('ProfilePageComponent', () => {
   });
 
   it('should call deleteUser and redirect on delete action', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     // Mock global location
     const originalLocation = globalThis.location;
     delete (globalThis as any).location;
@@ -73,7 +79,7 @@ describe('ProfilePageComponent', () => {
   });
 
   it('should not delete if confirmation declined', () => {
-    spyOn(window, 'confirm').and.returnValue(false);
+    vi.spyOn(window, 'confirm').mockReturnValue(false);
     component.deleteAccount();
     expect(apiSpy.deleteUser).not.toHaveBeenCalled();
   });

@@ -9,8 +9,8 @@ import { DatePipe } from '@angular/common';
 describe('AdminUsersPageComponent', () => {
   let component: AdminUsersPageComponent;
   let fixture: ComponentFixture<AdminUsersPageComponent>;
-  let apiSpy: jasmine.SpyObj<GraphqlApiService>;
-  let routerSpy: jasmine.SpyObj<Router>;
+  let apiSpy: any;
+  let routerSpy: any;
 
   const mockPageData: CognitoUserPage = {
     items: [
@@ -34,11 +34,16 @@ describe('AdminUsersPageComponent', () => {
   };
 
   beforeEach(async () => {
-    apiSpy = jasmine.createSpyObj('GraphqlApiService', ['users', 'deleteUser']);
-    routerSpy = jasmine.createSpyObj('Router', ['navigate']);
+    apiSpy = {
+      users: vi.fn(),
+      deleteUser: vi.fn()
+    };
+    routerSpy = {
+      navigate: vi.fn()
+    };
 
-    apiSpy.users.and.returnValue(of(mockPageData));
-    apiSpy.deleteUser.and.returnValue(of(true));
+    apiSpy.users.mockReturnValue(of(mockPageData));
+    apiSpy.deleteUser.mockReturnValue(of(true));
 
     await TestBed.configureTestingModule({
       imports: [AdminUsersPageComponent, DatePipe],
@@ -65,9 +70,8 @@ describe('AdminUsersPageComponent', () => {
   });
 
   it('should call deleteUser logic when delete button clicked', () => {
-    spyOn(window, 'confirm').and.returnValue(true);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
     
-    // Refresh view to ensure button exists
     fixture.detectChanges();
     
     const deleteBtn = fixture.debugElement.query(By.css('.btn-danger'));
