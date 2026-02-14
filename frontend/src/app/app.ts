@@ -22,7 +22,10 @@ export class App implements OnInit, OnDestroy {
   protected readonly signInUrl = 'http://localhost:8080/login';
   protected readonly signOutUrl = 'http://localhost:8080/logout';
   protected readonly isSignedIn = computed(() => !!this.me());
-  protected readonly isAdmin = computed(() => this.me()?.roles.includes('AdminUser') ?? false);
+  protected readonly isAdmin = computed(() => {
+    const roles = this.me()?.roles || [];
+    return roles.includes('AdminUser') || roles.includes('admin');
+  });
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {

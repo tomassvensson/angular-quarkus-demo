@@ -6,6 +6,9 @@
       @if (isAdmin()) {
         <a routerLink="/users" routerLinkActive="active">List Users</a>
       }
+      @if (isSignedIn()) {
+        <a routerLink="/profile" routerLinkActive="active">Profile</a>
+      }
       @if (!isSignedIn()) {
         <a class="menu-action" [href]="signInUrl">Sign in</a>
       }

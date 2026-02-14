@@ -42,6 +42,7 @@ import { CognitoUserPage, GraphqlApiService } from '../services/graphql-api.serv
               </th>
               <th><button (click)="sort('mfaSetting')">MFA setting {{ sortIndicator('mfaSetting') }}</button></th>
               <th>Group membership</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -57,6 +58,9 @@ import { CognitoUserPage, GraphqlApiService } from '../services/graphql-api.serv
                 <td>{{ user.lastUpdatedTime | date: 'yyyy-MM-dd HH:mm' }}</td>
                 <td>{{ user.mfaSetting }}</td>
                 <td>{{ user.groups.join(', ') || 'None' }}</td>
+                <td (click)="$event.stopPropagation()">
+                  <button class="btn-danger" (click)="deleteUser(user)">Delete</button>
+                </td>
               </tr>
             }
           </tbody>
@@ -70,7 +74,21 @@ import { CognitoUserPage, GraphqlApiService } from '../services/graphql-api.serv
         <span class="muted">Total users: {{ pageData()?.total ?? 0 }}</span>
       </div>
     </section>
-  `
+  `,
+  styles: [`
+    /* ... existing styles ... */
+    .btn-danger {
+      background-color: #dc3545;
+      color: white;
+      border: none;
+      padding: 4px 8px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    .btn-danger:hover {
+      background-color: #bb2d3b;
+    }
+  `]
 })
 export class AdminUsersPageComponent implements OnInit {
   private readonly api = inject(GraphqlApiService);
@@ -133,6 +151,21 @@ export class AdminUsersPageComponent implements OnInit {
     this.router.navigate(['/users', username]);
   }
 
+  protected deleteUser(user: { username: string; email: string }): void {
+    if (confirm(`Are you sure you want to delete ${user.username} (${user.email})?`)) {
+      this.loading.set(true);
+      this.api.deleteUser(user.username).subscribe({
+        next: () => {
+          this.load();
+        },
+        error: (err) => {
+          this.loading.set(false);
+          this.error.set(err.message || 'Could not delete user');
+        }
+      });
+    }
+  }
+
   private load(): void {
     const loadStartedAt = Date.now();
     const minOverlayMs = 220;
@@ -157,7 +190,7 @@ export class AdminUsersPageComponent implements OnInit {
       error: (err: Error) => {
         finishLoading();
         if (err.message === 'AUTH_REQUIRED') {
-          globalThis.location.assign('/');
+          this.router.navigate(['/']);
           return;
         }
         this.error.set(err.message || 'Could not load users');
