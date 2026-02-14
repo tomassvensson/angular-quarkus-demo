@@ -42,7 +42,7 @@ public class UserGraphQLApi {
     }
 
     @Query("users")
-    @RolesAllowed("AdminUser")
+    @RolesAllowed({"AdminUser", "admin"})
     public CognitoUserPage users(
             @DefaultValue("0") int page,
             @DefaultValue("10") int size,
@@ -52,19 +52,39 @@ public class UserGraphQLApi {
     }
 
     @Query("user")
-    @RolesAllowed("AdminUser")
+    @Authenticated
     public CognitoUserView user(String username) {
+        boolean isAdmin = identity.getRoles().contains("AdminUser") || identity.getRoles().contains("admin");
+        if (!isAdmin) {
+             String me = identity.getPrincipal().getName();
+             if (!me.equals(username)) {
+                 throw new SecurityException("You are not authorized to view this user.");
+             }
+        }
         return cognitoAdminService.getUser(username);
     }
 
     @Mutation("updateUser")
-    @RolesAllowed("AdminUser")
+    @RolesAllowed({"AdminUser", "admin"})
     public CognitoUserView updateUser(UpdateUserInput input) {
         return cognitoAdminService.updateUser(input);
     }
 
+    @Mutation("deleteUser")
+    @Authenticated
+    public boolean deleteUser(String username) {
+        boolean isAdmin = identity.getRoles().contains("AdminUser") || identity.getRoles().contains("admin");
+        if (!isAdmin) {
+            String me = identity.getPrincipal().getName();
+            if (!me.equals(username)) {
+                throw new SecurityException("You are not authorized to delete this user.");
+            }
+        }
+        return cognitoAdminService.deleteUser(username);
+    }
+
     @Query("groups")
-    @RolesAllowed("AdminUser")
+    @RolesAllowed({"AdminUser", "admin"})
     public List<String> groups() {
         return List.of("RegularUser", "AdminUser", "OwnerUser", "NoPermissionsTestUser");
     }

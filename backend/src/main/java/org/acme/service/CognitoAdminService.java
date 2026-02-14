@@ -11,6 +11,7 @@ import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClientBuilder;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDisableUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminEnableUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserRequest;
@@ -40,6 +41,9 @@ public class CognitoAdminService {
 
     @ConfigProperty(name = "aws.region")
     String awsRegion;
+
+    @ConfigProperty(name = "auth.provider", defaultValue = "cognito")
+    String authProvider;
 
     @ConfigProperty(name = "cognito.user-pool-id")
     String userPoolId;
@@ -76,6 +80,20 @@ public class CognitoAdminService {
     }
 
     public CognitoUserView getUser(String username) {
+        if ("keycloak".equalsIgnoreCase(authProvider)) {
+             // Mock for dev
+             CognitoUserView view = new CognitoUserView();
+             view.username = username;
+             view.email = username + "@example.com";
+             view.enabled = true;
+             view.status = "Enabled";
+             if ("admin".equalsIgnoreCase(username) || "admin@example.com".equalsIgnoreCase(username)) {
+                 view.groups = List.of("AdminUser", "RegularUser");
+             } else {
+                 view.groups = List.of("RegularUser");
+             }
+             return view;
+        }
         try (CognitoIdentityProviderClient client = client()) {
             AdminGetUserResponse response = client.adminGetUser(AdminGetUserRequest.builder()
                     .userPoolId(userPoolId)
@@ -83,6 +101,26 @@ public class CognitoAdminService {
                     .build());
             List<String> groups = groupsForUser(client, username);
             return map(response, groups);
+        }
+    }
+
+    public boolean deleteUser(String username) {
+        if ("keycloak".equalsIgnoreCase(authProvider)) {
+             // In mock/keycloak mode, we cannot call AWS Cognito.
+             // We assume success for the demo.
+             // Real implementation would call Keycloak Admin API.
+             return true;
+        }
+        try (CognitoIdentityProviderClient client = client()) {
+            client.adminDeleteUser(AdminDeleteUserRequest.builder()
+                    .userPoolId(userPoolId)
+                    .username(username)
+                    .build());
+            return true;
+        } catch (Exception e) {
+            // In a real app, log this better
+            e.printStackTrace();
+            throw e;
         }
     }
 

@@ -119,6 +119,11 @@ export class GraphqlApiService {
     return this.execute<{ updateUser: CognitoUser }>(query, { input }).pipe(map((result) => result.updateUser));
   }
 
+  deleteUser(username: string): Observable<boolean> {
+    const query = `mutation DeleteUser($username: String!) { deleteUser(username: $username) }`;
+    return this.execute<{ deleteUser: boolean }>(query, { username }).pipe(map((result) => result.deleteUser));
+  }
+
   private execute<T>(query: string, variables?: Record<string, unknown>): Observable<T> {
     return this.http
       .post(
@@ -139,6 +144,9 @@ export class GraphqlApiService {
           }
 
           if (response.errors?.length) {
+            if (response.errors[0].message === 'Not signed in') {
+              throw new Error('AUTH_REQUIRED');
+            }
             throw new Error(response.errors[0].message);
           }
           if (!response.data) {

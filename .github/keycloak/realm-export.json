@@ -1,6 +1,7 @@
 {
   "realm": "quarkus",
   "enabled": true,
+  "registrationAllowed": true,
   "users": [
     {
       "username": "alice",
@@ -12,11 +13,11 @@
         }
       ],
       "realmRoles": [
-        "user"
+        "RegularUser"
       ],
       "clientRoles": {
         "angular-quarkus-client": [
-          "user"
+          "RegularUser"
         ]
       },
       "email": "alice@example.com",
@@ -34,13 +35,13 @@
         }
       ],
       "realmRoles": [
-        "admin",
-        "user"
+        "AdminUser",
+        "RegularUser"
       ],
       "clientRoles": {
         "angular-quarkus-client": [
-          "admin",
-          "user"
+          "AdminUser",
+          "RegularUser"
         ]
       },
       "email": "admin@example.com",
@@ -52,12 +53,20 @@
   "roles": {
     "realm": [
       {
-        "name": "user",
+        "name": "RegularUser",
         "description": "User role"
       },
       {
-        "name": "admin",
+        "name": "AdminUser",
         "description": "Admin role"
+      },
+      {
+        "name": "OwnerUser",
+        "description": "Owner role"
+      },
+      {
+        "name": "NoPermissionsTestUser",
+        "description": "No Permissions Test User role"
       }
     ]
   },
