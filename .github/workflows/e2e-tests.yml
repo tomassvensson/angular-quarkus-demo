@@ -41,13 +41,18 @@ jobs:
         run: |
           timeout 300 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:9090/realms/quarkus)" != "200" ]]; do sleep 5; done' || false
 
+      - name: Download Jacoco Agent
+        run: wget https://repo1.maven.org/maven2/org/jacoco/org.jacoco.agent/0.8.11/org.jacoco.agent-0.8.11-runtime.jar -O jacocoagent.jar
+
       - name: Build Quarkus Backend
         working-directory: backend
         run: chmod +x mvnw && ./mvnw package -DskipTests
 
       - name: Start Quarkus Backend
         working-directory: backend
-        run: java -Dquarkus.profile=dev -jar target/quarkus-app/quarkus-run.jar &
+        run: |
+          java -javaagent:../jacocoagent.jar=destfile=target/jacoco-e2e.exec,append=false,output=file -Dquarkus.profile=dev -jar target/quarkus-app/quarkus-run.jar &
+          echo $! > backend.pid
 
       - name: Wait for Backend
         run: |
@@ -60,3 +65,22 @@ jobs:
       - name: Run Playwright E2E
         working-directory: frontend
         run: npm run e2e
+
+      - name: Stop Backend and Generate Coverage
+        if: always()
+        working-directory: backend
+        run: |
+          if [ -f backend.pid ]; then
+            kill $(cat backend.pid)
+            # Wait for graceful shutdown and coverage dump
+            sleep 10
+          fi
+          # Generate report
+          ./mvnw jacoco:report -Djacoco.dataFile=target/jacoco-e2e.exec
+
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v5
+        if: always()
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          flags: backend-e2e
