@@ -6,7 +6,9 @@
       @if (isAdmin()) {
         <a routerLink="/users" routerLinkActive="active">List Users</a>
       }
+      <a routerLink="/public-lists" routerLinkActive="active">Public Lists</a>
       @if (isSignedIn()) {
+        <a routerLink="/my-lists" routerLinkActive="active">My Lists</a>
         <a routerLink="/profile" routerLinkActive="active">Profile</a>
       }
       @if (!isSignedIn()) {
