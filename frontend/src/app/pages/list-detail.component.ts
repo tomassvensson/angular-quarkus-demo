@@ -1,0 +1,199 @@
+import { Component, inject, signal, Input, OnInit } from '@angular/core';
+import { CommonModule, DatePipe } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterLink, ActivatedRoute, Router } from '@angular/router';
+import { LinkService } from '../services/link.service';
+import { LinkList, Link } from '../models';
+
+@Component({
+  selector: 'app-list-detail',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterLink, DatePipe],
+  template: `
+    <div class="p-4">
+      @if (list(); as l) {
+        <div class="mb-6 border-b pb-4">
+          <div class="flex justify-between items-center mb-2">
+            @if (isOwner(l) && editingName) {
+                <div class="flex gap-2">
+                    <input [(ngModel)]="editNameValue" class="border p-1 rounded" />
+                    <button (click)="saveName()" class="bg-blue-500 text-white px-2 rounded">Save</button>
+                    <button (click)="cancelEditName()" class="text-gray-500 px-2">Cancel</button>
+                </div>
+            } @else {
+                <h1 class="text-2xl font-bold flex items-center gap-2">
+                    {{ l.name }}
+                    @if (isOwner(l)) {
+                        <button (click)="startEditName(l)" class="text-sm text-blue-500 font-normal border px-1 rounded hover:bg-gray-100">
+                            Edit Name
+                        </button>
+                    }
+                </h1>
+            }
+             <div class="flex gap-2">
+                 @if (isOwner(l)) {
+                    @if (l.published) {
+                        <button (click)="togglePublish(l)" class="bg-yellow-500 text-white px-3 py-1 rounded">Unpublish</button>
+                    } @else {
+                        <button (click)="togglePublish(l)" class="bg-green-500 text-white px-3 py-1 rounded">Publish</button>
+                    }
+                 }
+                 <a routerLink="/my-lists" class="text-gray-600 underline self-center ml-4">My Lists</a>
+             </div>
+          </div>
+          
+          <div class="text-sm text-gray-600">
+            Owner: {{ l.owner }} | 
+            Created: {{ l.createdAt | date:'medium' }} | 
+            Last Edited: {{ l.updatedAt | date:'medium' }} |
+            Count: {{ links().length }}
+          </div>
+        </div>
+
+        @if (isOwner(l)) {
+          <div class="mb-4 bg-gray-50 p-4 rounded border">
+            <h3 class="font-bold mb-2">Add New Link</h3>
+            <div class="flex gap-2 flex-wrap">
+              <input [(ngModel)]="newLinkUrl" placeholder="URL (https://...)" class="border p-2 rounded flex-1" />
+              <input [(ngModel)]="newLinkTitle" placeholder="Title" class="border p-2 rounded flex-1" />
+              <button (click)="addLink()" class="bg-blue-600 text-white px-4 py-2 rounded">Add Link</button>
+            </div>
+          </div>
+        }
+
+        <div class="grid gap-2">
+          @for (link of links(); track link.id) {
+            <div class="border p-3 rounded hover:bg-gray-50 flex justify-between items-center bg-white">
+              <div>
+                <a [href]="link.url" target="_blank" class="text-blue-600 font-medium hover:underline text-lg">
+                  {{ link.title }}
+                </a>
+                <div class="text-xs text-gray-400">
+                    {{ link.url }} <span class="mx-1">•</span> Added: {{ link.createdAt | date:'short' }}
+                </div>
+              </div>
+              @if (isOwner(l)) {
+                <button (click)="removeLink(link)" class="text-red-500 hover:text-red-700">
+                  Remove
+                </button>
+              }
+            </div>
+          } @empty {
+            <p class="text-gray-500">No links in this list yet.</p>
+          }
+        </div>
+
+      } @else {
+        <p>Loading...</p>
+      }
+    </div>
+  `
+})
+export class ListDetailComponent implements OnInit {
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private linkService = inject(LinkService);
+
+  // Hardcoded for demo
+  currentUser = 'me';
+
+  list = signal<LinkList | null>(null);
+  links = signal<Link[]>([]);
+  
+  newLinkUrl = '';
+  newLinkTitle = '';
+  
+  editingName = false;
+  editNameValue = '';
+
+  ngOnInit() {
+    this.route.paramMap.subscribe(params => {
+        const id = params.get('id');
+        if (id) this.loadList(id);
+    });
+  }
+
+  loadList(id: string) {
+    this.linkService.getListDetails(id).subscribe({
+        next: (data) => {
+            this.list.set(data.list);
+            this.links.set(data.links);
+        },
+        error: () => {
+            this.router.navigate(['/my-lists']);
+        }
+    });
+  }
+
+  isOwner(l: LinkList): boolean {
+    return l.owner === this.currentUser;
+  }
+
+  startEditName(l: LinkList) {
+    this.editingName = true;
+    this.editNameValue = l.name;
+  }
+  
+  cancelEditName() {
+    this.editingName = false;
+  }
+
+  saveName() {
+    const l = this.list();
+    if (!l || !this.editNameValue.trim()) return;
+
+    // Requirement 2e: Confirm on update? Prompt says "actions on lists... Publish, Unpublish, Delete".
+    // 2g says "The owner can edit the list including its name".
+    // It says "For these three actions (Publish, Unpublish, Delete)... confirm".
+    // Editing name doesn't require confirmation per spec, usually. 
+    
+    this.linkService.updateList(l.id, { name: this.editNameValue }).subscribe(updated => {
+        this.list.update(curr => curr ? ({ ...curr, name: updated.name, updatedAt: updated.updatedAt }) : null);
+        this.editingName = false;
+    });
+  }
+
+  togglePublish(l: LinkList) {
+    const action = l.published ? 'unpublish' : 'publish';
+    const conf = window.confirm(`Are you sure you want to ${action} the list "${l.name}"?`);
+    if (!conf) return;
+    
+    this.linkService.updateList(l.id, { published: !l.published }).subscribe(updated => {
+        this.list.update(curr => curr ? ({ ...curr, published: updated.published, updatedAt: updated.updatedAt }) : null);
+    });
+  }
+
+  addLink() {
+    const l = this.list();
+    if (!l || !this.newLinkUrl || !this.newLinkTitle) return;
+
+    this.linkService.addLinkToList(l.id, this.currentUser, this.newLinkUrl, this.newLinkTitle).subscribe(updatedList => {
+        // Refresh details or push link manually. API returns list.
+        // We need the link object. For simplicity let's reload or assume API returns link?
+        // My API addLinkToList currently returns LinkList.
+        // I should reload details to get the Link objects
+        this.loadList(l.id);
+        this.newLinkUrl = '';
+        this.newLinkTitle = '';
+    });
+  }
+
+  removeLink(link: Link) {
+    const l = this.list();
+    if (!l) return;
+    
+    // We didn't explicitly specify list item removal API.
+    // The requirement: "Owner can ... add or remove URLs".
+    // I implemented add (via createLink+UpdateList or AddLinkToList).
+    // UpdateList takes linkIds. So I can remove ID from list.
+    
+    // Spec says: "Confirmation question including the name of the list" for (Publish, Unpublish, Delete List).
+    // Removing link probably doesn't strictly need it, but let's be safe or just do it.
+    
+    const newIds = l.linkIds.filter(id => id !== link.id);
+    this.linkService.updateList(l.id, { linkIds: newIds }).subscribe(updated => {
+        this.list.set(updated);
+        this.links.update(current => current.filter(x => x.id !== link.id));
+    });
+  }
+}
