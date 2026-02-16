@@ -52,8 +52,6 @@ jobs:
         run: |
           cd backend
           mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=angular-quarkus-demo-backend \
-            -Dsonar.organization=angular-quarkus-demo \
             -Dsonar.host.url=https://sonarcloud.io \
             -DskipTests
         # Only run if SONAR_TOKEN is set
@@ -83,11 +81,6 @@ jobs:
             SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
             projectBaseDir: frontend
-            args: >
-              -Dsonar.projectKey=angular-quarkus-demo-frontend
-              -Dsonar.organization=angular-quarkus-demo
-              -Dsonar.sources=src
-              -Dsonar.tests=src
-              -Dsonar.test.inclusions=**/*.spec.ts
-              -Dsonar.typescript.lcov.reportPaths=coverage/lcov.info
         if: ${{ env.SONAR_TOKEN != '' }}
+
+
