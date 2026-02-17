@@ -49,8 +49,9 @@ public class LogoutResource {
     @GET
     public Uni<Response> logout() {
         String logoutUrl;
-        
-        if ("keycloak".equals(authProvider)) {
+
+        // If explicitly keycloak AND auth server is not pointing to Cognito
+        if ("keycloak".equals(authProvider) && !authServerUrl.contains("cognito")) {
             // Keycloak simple logout redirect
             // Ideally we'd use the end_session_endpoint from OIDC metadata, but we can approximate:
              logoutUrl = authServerUrl + "/protocol/openid-connect/logout?post_logout_redirect_uri=" 
@@ -77,6 +78,6 @@ public class LogoutResource {
     }
 
     private String normalizedBaseUrl() {
-        return frontendBaseUrl.endsWith("/") ? frontendBaseUrl : frontendBaseUrl + "/";
+        return frontendBaseUrl;
     }
 }
