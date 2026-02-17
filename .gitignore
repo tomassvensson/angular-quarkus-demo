@@ -93,3 +93,5 @@ Thumbs.db
 
 
 **/test_output*.txt
+**/prompts.txt
+.github/copilot-instructions.md
