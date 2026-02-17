@@ -2,8 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ListDetailComponent } from './list-detail.component';
 import { LinkService } from '../services/link.service';
 import { of, throwError } from 'rxjs';
-import { ActivatedRoute, Router } from '@angular/router';
-import { RouterTestingModule } from '@angular/router/testing';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { vi } from 'vitest';
 
@@ -25,8 +24,9 @@ describe('ListDetailComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [ListDetailComponent, RouterTestingModule],
+      imports: [ListDetailComponent],
       providers: [
+        provideRouter([]),
         { provide: LinkService, useValue: linkServiceMock },
         { 
             provide: ActivatedRoute, 
@@ -60,7 +60,7 @@ describe('ListDetailComponent', () => {
   });
 
   it('should toggle publish', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
     if (!component.list()) return;
     
     component.togglePublish(component.list()!);
@@ -98,20 +98,20 @@ describe('ListDetailComponent', () => {
   });
 
   it('should not add link with invalid URL', () => {
-    vi.spyOn(window, 'alert').mockImplementation(() => {});
+    vi.spyOn(globalThis, 'alert').mockImplementation(() => {});
     component.newLinkUrl = 'invalid-url';
     component.newLinkTitle = 'Title';
     component.addLink();
     expect(linkServiceMock.addLinkToList).not.toHaveBeenCalled();
-    expect(window.alert).toHaveBeenCalled();
+    expect(globalThis.alert).toHaveBeenCalled();
   });
 
   it('should add a link', () => {
-    component.newLinkUrl = 'http://new.com';
+    component.newLinkUrl = 'https://new.com';
     component.newLinkTitle = 'New Link';
     component.addLink();
     
-    expect(linkServiceMock.addLinkToList).toHaveBeenCalledWith('1', 'http://new.com', 'New Link');
+    expect(linkServiceMock.addLinkToList).toHaveBeenCalledWith('1', 'https://new.com', 'New Link');
     expect(linkServiceMock.getListDetails).toHaveBeenCalledTimes(2); 
   });
 

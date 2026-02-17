@@ -5,6 +5,7 @@ import org.acme.graphql.model.CognitoUserPage;
 import org.acme.graphql.model.CognitoUserView;
 import org.acme.graphql.model.UpdateUserInput;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.jboss.logging.Logger;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -39,6 +40,9 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class CognitoAdminService {
 
+    private static final String ATTR_EMAIL = "email";
+    private static final Logger LOG = Logger.getLogger(CognitoAdminService.class);
+
     @ConfigProperty(name = "aws.region")
     String awsRegion;
 
@@ -59,7 +63,7 @@ public class CognitoAdminService {
 
     public CognitoUserPage listUsers(int page, int size, String sortBy, String direction) {
         int safePage = Math.max(0, page);
-        int safeSize = Math.max(1, Math.min(100, size));
+        int safeSize = Math.clamp(size, 1, 100);
 
         List<CognitoUserView> all = fetchAllUsers();
         Comparator<CognitoUserView> comparator = comparatorFor(sortBy);
@@ -118,74 +122,18 @@ public class CognitoAdminService {
                     .build());
             return true;
         } catch (Exception e) {
-            // In a real app, log this better
-            e.printStackTrace();
+            LOG.error("Failed to delete user: " + username, e);
             throw e;
         }
     }
 
     public CognitoUserView updateUser(UpdateUserInput input) {
-        if (input == null || input.username == null || input.username.isBlank()) {
-            throw new IllegalArgumentException("username is required");
-        }
-
-        String username = input.username.trim();
+        validateInput(input);
+        String username = input.getUsername().trim();
         try (CognitoIdentityProviderClient client = client()) {
-            if (input.email != null && !input.email.isBlank()) {
-                client.adminUpdateUserAttributes(AdminUpdateUserAttributesRequest.builder()
-                        .userPoolId(userPoolId)
-                        .username(username)
-                        .userAttributes(
-                                AttributeType.builder().name("email").value(input.email.trim()).build(),
-                                AttributeType.builder().name("email_verified").value("true").build())
-                        .build());
-            }
-
-            if (input.enabled != null) {
-                if (input.enabled) {
-                    client.adminEnableUser(AdminEnableUserRequest.builder()
-                            .userPoolId(userPoolId)
-                            .username(username)
-                            .build());
-                } else {
-                    client.adminDisableUser(AdminDisableUserRequest.builder()
-                            .userPoolId(userPoolId)
-                            .username(username)
-                            .build());
-                }
-            }
-
-            if (input.groups != null) {
-                Set<String> desired = new HashSet<>();
-                for (String group : input.groups) {
-                    if (group != null && !group.isBlank()) {
-                        desired.add(group.trim());
-                    }
-                }
-
-                List<String> currentGroups = groupsForUser(client, username);
-                Set<String> current = new HashSet<>(currentGroups);
-
-                for (String group : current) {
-                    if (!desired.contains(group)) {
-                        client.adminRemoveUserFromGroup(AdminRemoveUserFromGroupRequest.builder()
-                                .userPoolId(userPoolId)
-                                .username(username)
-                                .groupName(group)
-                                .build());
-                    }
-                }
-
-                for (String group : desired) {
-                    if (!current.contains(group)) {
-                        client.adminAddUserToGroup(AdminAddUserToGroupRequest.builder()
-                                .userPoolId(userPoolId)
-                                .username(username)
-                                .groupName(group)
-                                .build());
-                    }
-                }
-            }
+            updateEmailIfPresent(client, username, input);
+            updateEnabledStatus(client, username, input.getEnabled());
+            syncGroups(client, username, input.getGroups());
 
             AdminGetUserResponse updated = client.adminGetUser(AdminGetUserRequest.builder()
                     .userPoolId(userPoolId)
@@ -193,6 +141,74 @@ public class CognitoAdminService {
                     .build());
             List<String> groups = groupsForUser(client, username);
             return map(updated, groups);
+        }
+    }
+
+    private void validateInput(UpdateUserInput input) {
+        if (input == null || input.getUsername() == null || input.getUsername().isBlank()) {
+            throw new IllegalArgumentException("username is required");
+        }
+    }
+
+    private void updateEmailIfPresent(CognitoIdentityProviderClient client, String username, UpdateUserInput input) {
+        if (input.getEmail() == null || input.getEmail().isBlank()) {
+            return;
+        }
+        client.adminUpdateUserAttributes(AdminUpdateUserAttributesRequest.builder()
+                .userPoolId(userPoolId)
+                .username(username)
+                .userAttributes(
+                        AttributeType.builder().name(ATTR_EMAIL).value(input.getEmail().trim()).build(),
+                        AttributeType.builder().name("email_verified").value("true").build())
+                .build());
+    }
+
+    private void updateEnabledStatus(CognitoIdentityProviderClient client, String username, Boolean enabled) {
+        if (Boolean.TRUE.equals(enabled)) {
+            client.adminEnableUser(AdminEnableUserRequest.builder()
+                    .userPoolId(userPoolId)
+                    .username(username)
+                    .build());
+        } else if (Boolean.FALSE.equals(enabled)) {
+            client.adminDisableUser(AdminDisableUserRequest.builder()
+                    .userPoolId(userPoolId)
+                    .username(username)
+                    .build());
+        }
+    }
+
+    private void syncGroups(CognitoIdentityProviderClient client, String username, List<String> desiredGroups) {
+        if (desiredGroups == null) {
+            return;
+        }
+
+        Set<String> desired = new HashSet<>();
+        for (String group : desiredGroups) {
+            if (group != null && !group.isBlank()) {
+                desired.add(group.trim());
+            }
+        }
+
+        Set<String> current = new HashSet<>(groupsForUser(client, username));
+
+        for (String group : current) {
+            if (!desired.contains(group)) {
+                client.adminRemoveUserFromGroup(AdminRemoveUserFromGroupRequest.builder()
+                        .userPoolId(userPoolId)
+                        .username(username)
+                        .groupName(group)
+                        .build());
+            }
+        }
+
+        for (String group : desired) {
+            if (!current.contains(group)) {
+                client.adminAddUserToGroup(AdminAddUserToGroupRequest.builder()
+                        .userPoolId(userPoolId)
+                        .username(username)
+                        .groupName(group)
+                        .build());
+            }
         }
     }
 
@@ -226,7 +242,7 @@ public class CognitoAdminService {
     private Comparator<CognitoUserView> comparatorFor(String sortBy) {
         String field = sortBy == null ? "username" : sortBy.trim().toLowerCase(Locale.ROOT);
         return switch (field) {
-            case "email" -> Comparator.comparing(user -> safe(user.getEmail()));
+            case ATTR_EMAIL -> Comparator.comparing(user -> safe(user.getEmail()));
             case "status" -> Comparator.comparing(user -> safe(user.getStatus()));
             case "confirmationstatus" -> Comparator.comparing(user -> safe(user.getConfirmationStatus()));
             case "emailverified" -> Comparator.comparing(user -> user.isEmailVerified());
@@ -252,26 +268,10 @@ public class CognitoAdminService {
         return groups;
     }
 
-    private CognitoUserView map(UserType user, List<String> groups) {
-        CognitoUserView view = new CognitoUserView();
-        view.setUsername(user.username());
-        view.setEmail(attributeValue(user.attributes(), "email"));
-        view.setEmailVerified(parseBoolean(attributeValue(user.attributes(), "email_verified")));
-        view.setConfirmationStatus(user.userStatusAsString());
-        view.setEnabled(Boolean.TRUE.equals(user.enabled()));
-        view.setStatus(view.isEnabled() ? "Enabled" : "Disabled");
-        view.setCreated(user.userCreateDate());
-        view.setLastUpdatedTime(user.userLastModifiedDate());
-        view.setModified(user.userLastModifiedDate());
-        view.setMfaSetting("Unknown");
-        view.setGroups(groups);
-        return view;
-    }
-
     private CognitoUserView map(AdminGetUserResponse user, List<String> groups) {
         CognitoUserView view = new CognitoUserView();
         view.setUsername(user.username());
-        view.setEmail(attributeValue(user.userAttributes(), "email"));
+        view.setEmail(attributeValue(user.userAttributes(), ATTR_EMAIL));
         view.setEmailVerified(parseBoolean(attributeValue(user.userAttributes(), "email_verified")));
         view.setConfirmationStatus(user.userStatusAsString());
         view.setEnabled(Boolean.TRUE.equals(user.enabled()));

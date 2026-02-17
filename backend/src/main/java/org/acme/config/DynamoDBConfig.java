@@ -9,8 +9,12 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 @ApplicationScoped
 public class DynamoDBConfig {
 
+    private final DynamoDbClient dynamoDbClient;
+
     @Inject
-    DynamoDbClient dynamoDbClient;
+    public DynamoDBConfig(DynamoDbClient dynamoDbClient) {
+        this.dynamoDbClient = dynamoDbClient;
+    }
 
     @Produces
     @ApplicationScoped

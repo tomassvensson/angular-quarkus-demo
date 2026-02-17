@@ -16,12 +16,15 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.jboss.logging.Logger;
 
 // @QuarkusTest - Quarkus starts on test port 8081
 @QuarkusTest
 @Tag("external-auth")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class CognitoE2ETest {
+
+    private static final Logger LOG = Logger.getLogger(CognitoE2ETest.class);
 
     // Manual Playwright management to solve injection issues
     static Playwright playwright;
@@ -35,15 +38,14 @@ class CognitoE2ETest {
 
     @BeforeAll
     static void globalSetup() {
-        System.out.println("Initializing Playwright Manually...");
+        LOG.info("Initializing Playwright Manually...");
         try {
             playwright = Playwright.create();
             // Launch chromium, headless by default
             browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
-            System.out.println("Playwright initialized.");
+            LOG.info("Playwright initialized.");
         } catch (Exception e) {
-            System.err.println("Failed to initialize Playwright: " + e.getMessage());
-            e.printStackTrace();
+            LOG.error("Failed to initialize Playwright", e);
             throw e;
         }
     }
@@ -90,7 +92,7 @@ class CognitoE2ETest {
             page.waitForURL(url -> url.contains("amazoncognito.com") || url.contains("realms/quarkus") || url.contains("localhost:9090"), 
                             new Page.WaitForURLOptions().setTimeout(10000));
         } catch (Exception e) {
-            System.out.println("Did not reach IDP. Current URL: " + page.url());
+            LOG.warn("Did not reach IDP. Current URL: " + page.url());
             throw e;
         }
 
@@ -103,14 +105,14 @@ class CognitoE2ETest {
                 page.fill("input[name='password']", "alice");
                 page.click("input[type='submit'], button[type='submit'], #kc-login");
             } catch (Exception e) {
-                System.out.println("Keycloak interaction failed: " + e.getMessage());
+                LOG.warn("Keycloak interaction failed: " + e.getMessage());
                 throw e;
             }
         } else {
             // --- Cognito Flow ---
             // Check for redirect_mismatch error (test port not configured in Cognito callback URLs)
             if (page.url().contains("error=redirect_mismatch")) {
-                System.out.println("WARN: Cognito redirect_mismatch - test port callback URL not configured in Cognito. "
+                LOG.warn("Cognito redirect_mismatch - test port callback URL not configured in Cognito. "
                         + "Add " + BASE_URL + "/login to Cognito's Allowed Callback URLs to enable full E2E test.");
                 return; // Can't continue — Cognito doesn't have the test port callback URL
             }
@@ -119,7 +121,7 @@ class CognitoE2ETest {
             try {
                 page.waitForSelector("input[name='username']", new Page.WaitForSelectorOptions().setTimeout(10000));
             } catch (Exception e) {
-                System.out.println("Could not find username field at " + page.url());
+                LOG.warn("Could not find username field at " + page.url());
                 throw e;
             }
             
@@ -138,7 +140,7 @@ class CognitoE2ETest {
                 page.waitForSelector("input[type='password']", new Page.WaitForSelectorOptions().setTimeout(10000));
                 page.fill("input[type='password']", "Test1234!"); 
             } catch (Exception e) {
-                System.out.println("Could not find password field. Body:\n" + page.content());
+                LOG.warn("Could not find password field. Body:\n" + page.content());
                 throw e;
             }
             
@@ -160,12 +162,12 @@ class CognitoE2ETest {
                  // Wait for URL localhost OR Error message (guard against null body)
                  page.waitForFunction("() => window.location.href.startsWith('" + BASE_URL + "') || (document.body && document.body.innerText && document.body.innerText.includes('Incorrect username or password'))");
             } catch (Exception e) {
-                 System.out.println("Wait for Login Result failed. URL: " + page.url());
+                 LOG.warn("Wait for Login Result failed. URL: " + page.url());
                  throw e;
             }
 
         if (page.content().contains("Incorrect username or password")) {
-             System.out.println("WARN: Login validation passed (Cognito reached), but credentials were rejected.");
+             LOG.warn("Login validation passed (Cognito reached), but credentials were rejected.");
              return; // Stop test here, as we can't test logout
         }
 
@@ -173,8 +175,8 @@ class CognitoE2ETest {
         try {
             page.waitForSelector("text='Sign Out'", new Page.WaitForSelectorOptions().setTimeout(10000));
         } catch (Exception e) {
-             System.out.println("Sign Out not visible after wait. Current URL: " + page.url());
-             System.out.println("Body snippet: " + page.content().substring(0, Math.min(page.content().length(), 1000)));
+             LOG.warn("Sign Out not visible after wait. Current URL: " + page.url());
+             LOG.warn("Body snippet: " + page.content().substring(0, Math.min(page.content().length(), 1000)));
         }
 
         // Check for Logout button or user name
@@ -187,14 +189,14 @@ class CognitoE2ETest {
         // If we are stuck on the IDP page (Keycloak), navigate back to home to verify app logout
         // This handles cases where IDP prompts for logout confirmation or Login (if session cleared)
         if (page.url().contains(":9090")) { 
-            System.out.println("WARN: Logout ended on IDP. Navigating back to " + BASE_URL);
+            LOG.warn("Logout ended on IDP. Navigating back to " + BASE_URL);
             page.navigate(BASE_URL);
             page.waitForLoadState();
         }
 
         if (!page.isVisible("text='Sign in'")) {
-             System.out.println("Sign in not visible after logout. URL: " + page.url());
-             System.out.println("Body snippet: " + page.content().substring(0, Math.min(page.content().length(), 1000)));
+             LOG.warn("Sign in not visible after logout. URL: " + page.url());
+             LOG.warn("Body snippet: " + page.content().substring(0, Math.min(page.content().length(), 1000)));
         }
         Assertions.assertTrue(page.isVisible("text='Sign in'"));
     }

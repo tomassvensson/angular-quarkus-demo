@@ -7,7 +7,6 @@ import { LinkList } from '../models';
 
 @Component({
   selector: 'app-my-lists',
-  standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, DatePipe],
   template: `
     <div class="p-4">
@@ -39,7 +38,7 @@ import { LinkList } from '../models';
                 <div class="text-sm text-gray-500">
                   Created: {{ list.createdAt | date:'short' }} |
                   Published: {{ list.published ? 'Yes' : 'No' }} |
-                  Links: {{ list.linkIds?.length || 0 }}
+                  Links: {{ list.linkIds.length || 0 }}
                 </div>
               </div>
               <div class="flex gap-2" (click)="$event.stopPropagation()">
@@ -73,7 +72,7 @@ export class MyListsComponent implements OnInit {
   private readonly linkService = inject(LinkService);
   private readonly router = inject(Router);
   
-  lists = signal<LinkList[]>([]);
+  readonly lists = signal<LinkList[]>([]);
   newListName = ''; // Template-driven form
 
   ngOnInit() {
@@ -91,7 +90,7 @@ export class MyListsComponent implements OnInit {
   }
 
   private sanitize(input: string): string {
-    return input.replace(/<[^>]*>?/gm, '').trim();
+    return input.replaceAll(/<[^>]*>?/gm, '').trim();
   }
 
   createList() {
@@ -106,7 +105,7 @@ export class MyListsComponent implements OnInit {
 
   togglePublish(list: LinkList) {
     const action = list.published ? 'unpublish' : 'publish';
-    const conf = window.confirm(`Are you sure you want to ${action} the list "${list.name}"?`);
+    const conf = globalThis.confirm(`Are you sure you want to ${action} the list "${list.name}"?`);
     if (!conf) return;
 
     this.linkService.updateList(list.id, { published: !list.published }).subscribe(updated => {
@@ -115,7 +114,7 @@ export class MyListsComponent implements OnInit {
   }
 
   deleteList(list: LinkList) {
-    const conf = window.confirm(`Are you sure you want to delete the list "${list.name}"?`);
+    const conf = globalThis.confirm(`Are you sure you want to delete the list "${list.name}"?`);
     if (!conf) return;
 
     this.linkService.deleteList(list.id).subscribe(() => {

@@ -12,10 +12,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.jboss.logging.Logger;
 
 @QuarkusTest
 class HomePageTest {
 
+    private static final Logger LOG = Logger.getLogger(HomePageTest.class);
     static Playwright playwright;
     static Browser browser;
     BrowserContext context;
@@ -26,14 +28,13 @@ class HomePageTest {
 
     @BeforeAll
     static void globalSetup() {
-        System.out.println("Initializing Playwright Manually...");
+        LOG.info("Initializing Playwright Manually...");
         try {
             playwright = Playwright.create();
             browser = playwright.chromium().launch(new BrowserType.LaunchOptions().setHeadless(true));
-            System.out.println("Playwright initialized.");
+            LOG.info("Playwright initialized.");
         } catch (Exception e) {
-            System.err.println("Failed to initialize Playwright: " + e.getMessage());
-            e.printStackTrace();
+            LOG.error("Failed to initialize Playwright", e);
             throw e;
         }
     }
@@ -57,12 +58,12 @@ class HomePageTest {
 
     @Test
     void testHomePageLoads() {
-        System.out.println("Navigating to " + BASE_URL);
+        LOG.info("Navigating to " + BASE_URL);
         page.navigate(BASE_URL);
 
         // Verify Title
         String title = page.title();
-        System.out.println("Page Title: " + title);
+        LOG.info("Page Title: " + title);
         Assertions.assertTrue(title.contains("AWS Cognito Demo App"), "Title should match. Found: " + title);
 
         // Verify Content

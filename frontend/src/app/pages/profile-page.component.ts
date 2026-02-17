@@ -64,9 +64,9 @@ export class ProfilePageComponent implements OnInit {
   private readonly api = inject(GraphqlApiService);
   private readonly router = inject(Router);
 
-  loading = signal(true);
-  error = signal('');
-  user = signal<CognitoUser | null>(null);
+  readonly loading = signal(true);
+  readonly error = signal('');
+  readonly user = signal<CognitoUser | null>(null);
 
   ngOnInit() {
     this.load();

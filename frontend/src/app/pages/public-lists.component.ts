@@ -6,7 +6,6 @@ import { LinkList } from '../models';
 
 @Component({
   selector: 'app-public-lists',
-  standalone: true,
   imports: [CommonModule, RouterLink, DatePipe],
   template: `
     <div class="p-4">
@@ -38,7 +37,7 @@ import { LinkList } from '../models';
 })
 export class PublicListsComponent implements OnInit {
   private readonly linkService = inject(LinkService);
-  lists = signal<LinkList[]>([]);
+  readonly lists = signal<LinkList[]>([]);
 
   ngOnInit() {
     this.linkService.getPublishedLists().subscribe(data => {
