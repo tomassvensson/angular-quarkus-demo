@@ -8,7 +8,6 @@ import org.eclipse.microprofile.graphql.*;
 import io.quarkus.security.Authenticated;
 
 import java.util.List;
-import java.util.Set;
 
 @GraphQLApi
 public class LinkGraphQLResource {

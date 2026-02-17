@@ -21,7 +21,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 @QuarkusTest
 @Tag("external-auth")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CognitoE2ETest {
+class CognitoE2ETest {
 
     // Manual Playwright management to solve injection issues
     static Playwright playwright;
@@ -34,7 +34,7 @@ public class CognitoE2ETest {
     private static final String BASE_URL = "http://localhost:8081";
 
     @BeforeAll
-    public static void globalSetup() {
+    static void globalSetup() {
         System.out.println("Initializing Playwright Manually...");
         try {
             playwright = Playwright.create();
@@ -49,20 +49,20 @@ public class CognitoE2ETest {
     }
 
     @AfterAll
-    public static void globalTeardown() {
+    static void globalTeardown() {
         if (playwright != null) {
             playwright.close();
         }
     }
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         context = browser.newContext();
         page = context.newPage();
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         if (context != null) {
             context.close();
         }
@@ -70,7 +70,7 @@ public class CognitoE2ETest {
 
     @Test
     @Order(1)
-    public void testHomePagePublic() {
+    void testHomePagePublic() {
         page.navigate(BASE_URL);
         Assertions.assertTrue(page.title().contains("AWS Cognito Demo App"), "Title should contain 'AWS Cognito Demo App'");
         Assertions.assertTrue(page.content().contains("Sign in"), "Page should contain 'Sign in'");
@@ -78,7 +78,7 @@ public class CognitoE2ETest {
 
     @Test
     @Order(2)
-    public void testLoginAndLogout() {
+    void testLoginAndLogout() {
         page.navigate(BASE_URL);
 
         // 1. Click Sign In

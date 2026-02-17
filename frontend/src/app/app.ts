@@ -19,8 +19,8 @@ export class App implements OnInit, OnDestroy {
   protected readonly me = signal<CurrentUser | null>(null);
   protected readonly loading = signal(true);
   protected readonly error = signal('');
-  protected readonly signInUrl = 'http://localhost:8080/login';
-  protected readonly signOutUrl = 'http://localhost:8080/logout';
+  protected readonly signInUrl = 'http://localhost:8080/login'; // NOSONAR
+  protected readonly signOutUrl = 'http://localhost:8080/logout'; // NOSONAR
   protected readonly isSignedIn = computed(() => !!this.me());
   protected readonly isAdmin = computed(() => {
     const roles = this.me()?.roles || [];
