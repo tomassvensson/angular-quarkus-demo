@@ -70,8 +70,8 @@ import { LinkList } from '../models';
   `
 })
 export class MyListsComponent implements OnInit {
-  private linkService = inject(LinkService);
-  private router = inject(Router);
+  private readonly linkService = inject(LinkService);
+  private readonly router = inject(Router);
   
   // TODO: Get actual owner from Auth. Using 'me' for demo.
   owner = 'me'; 

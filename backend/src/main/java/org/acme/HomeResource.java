@@ -12,11 +12,14 @@ import jakarta.ws.rs.core.MediaType;
 @Path("/")
 public class HomeResource {
 
-    @Inject
-    Template home;
+    private final Template home;
+    private final SecurityIdentity identity;
 
     @Inject
-    SecurityIdentity identity;
+    public HomeResource(Template home, SecurityIdentity identity) {
+        this.home = home;
+        this.identity = identity;
+    }
 
     @GET
     @Produces(MediaType.TEXT_HTML)

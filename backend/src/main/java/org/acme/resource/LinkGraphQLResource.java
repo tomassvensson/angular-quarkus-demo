@@ -12,8 +12,12 @@ import java.util.List;
 @GraphQLApi
 public class LinkGraphQLResource {
 
+    private final LinkService linkService;
+
     @Inject
-    LinkService linkService;
+    public LinkGraphQLResource(LinkService linkService) {
+        this.linkService = linkService;
+    }
 
     @Query("publishedLists")
     @Authenticated
@@ -98,13 +102,29 @@ public class LinkGraphQLResource {
     // Input/Output Types
 
     public static class ListDetailsResponse {
-        public LinkList list;
-        public List<Link> links;
+        private LinkList list;
+        private List<Link> links;
         
         public ListDetailsResponse() {}
         
         public ListDetailsResponse(LinkList list, List<Link> links) {
             this.list = list;
+            this.links = links;
+        }
+
+        public LinkList getList() {
+            return list;
+        }
+
+        public void setList(LinkList list) {
+            this.list = list;
+        }
+
+        public List<Link> getLinks() {
+            return links;
+        }
+
+        public void setLinks(List<Link> links) {
             this.links = links;
         }
     }

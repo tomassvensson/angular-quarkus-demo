@@ -20,11 +20,14 @@ import java.time.Instant;
 @ApplicationScoped
 public class LinkService {
 
-    @Inject
-    DynamoDbEnhancedClient dynamoDB;
-
+    private final DynamoDbEnhancedClient enhancedClient;
     private DynamoDbTable<Link> linkTable;
     private DynamoDbTable<LinkList> listTable;
+
+    @Inject
+    public LinkService(DynamoDbEnhancedClient enhancedClient) {
+        this.enhancedClient = enhancedClient;
+    }
 
     private static final TableSchema<LinkList> LIST_SCHEMA = TableSchema.builder(LinkList.class)
         .newItemSupplier(LinkList::new)
@@ -77,8 +80,8 @@ public class LinkService {
 
     @PostConstruct
     void init() {
-        linkTable = dynamoDB.table("Links", LINK_SCHEMA);
-        listTable = dynamoDB.table("Lists", LIST_SCHEMA);
+        linkTable = enhancedClient.table("Links", LINK_SCHEMA);
+        listTable = enhancedClient.table("Lists", LIST_SCHEMA);
 
         // Create tables if not exist (mostly for local development)
         try {

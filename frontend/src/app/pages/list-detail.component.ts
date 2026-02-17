@@ -90,9 +90,9 @@ import { LinkList, Link } from '../models';
   `
 })
 export class ListDetailComponent implements OnInit {
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  private linkService = inject(LinkService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly linkService = inject(LinkService);
 
   // Hardcoded for demo
   currentUser = 'me';

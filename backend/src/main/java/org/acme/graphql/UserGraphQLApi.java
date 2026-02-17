@@ -22,22 +22,26 @@ import java.util.List;
 @Authenticated
 public class UserGraphQLApi {
 
-    @Inject
-    SecurityIdentity identity;
+    private final SecurityIdentity identity;
+    private final CognitoAdminService cognitoAdminService;
 
     @Inject
-    CognitoAdminService cognitoAdminService;
+    public UserGraphQLApi(SecurityIdentity identity, CognitoAdminService cognitoAdminService) {
+        this.identity = identity;
+        this.cognitoAdminService = cognitoAdminService;
+    }
 
     @Query("me")
     public CurrentUserView me() {
         CurrentUserView me = new CurrentUserView();
-        me.username = identity.getPrincipal().getName();
+        me.setUsername(identity.getPrincipal().getName());
 
         String email = identity.getAttribute("email");
-        me.email = email == null || email.isBlank() ? me.username : email;
+        me.setEmail(email == null || email.isBlank() ? me.getUsername() : email);
 
-        me.roles = new ArrayList<>(identity.getRoles());
-        me.roles.sort(String::compareToIgnoreCase);
+        List<String> roles = new ArrayList<>(identity.getRoles());
+        roles.sort(String::compareToIgnoreCase);
+        me.setRoles(roles);
         return me;
     }
 

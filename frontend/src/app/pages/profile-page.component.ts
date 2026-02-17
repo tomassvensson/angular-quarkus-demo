@@ -61,8 +61,8 @@ import { GraphqlApiService, CognitoUser } from '../services/graphql-api.service'
   `]
 })
 export class ProfilePageComponent implements OnInit {
-  private api = inject(GraphqlApiService);
-  private router = inject(Router);
+  private readonly api = inject(GraphqlApiService);
+  private readonly router = inject(Router);
 
   loading = signal(true);
   error = signal('');

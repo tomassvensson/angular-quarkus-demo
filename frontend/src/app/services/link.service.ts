@@ -8,7 +8,7 @@ import { Link, LinkList, ListDetails } from '../models';
   providedIn: 'root'
 })
 export class LinkService {
-  private http = inject(HttpClient);
+  private readonly http = inject(HttpClient);
   // GraphQL endpoint
   private apiUrl = 'http://localhost:8080/api/v1/graphql'; // NOSONAR
 

@@ -72,10 +72,10 @@ public class CognitoAdminService {
         int toIndex = Math.min(fromIndex + safeSize, all.size());
 
         CognitoUserPage result = new CognitoUserPage();
-        result.items = all.subList(fromIndex, toIndex);
-        result.page = safePage;
-        result.size = safeSize;
-        result.total = all.size();
+        result.setItems(all.subList(fromIndex, toIndex));
+        result.setPage(safePage);
+        result.setSize(safeSize);
+        result.setTotal(all.size());
         return result;
     }
 
@@ -83,14 +83,14 @@ public class CognitoAdminService {
         if ("keycloak".equalsIgnoreCase(authProvider)) {
              // Mock for dev
              CognitoUserView view = new CognitoUserView();
-             view.username = username;
-             view.email = username + "@example.com";
-             view.enabled = true;
-             view.status = "Enabled";
+             view.setUsername(username);
+             view.setEmail(username + "@example.com");
+             view.setEnabled(true);
+             view.setStatus("Enabled");
              if ("admin".equalsIgnoreCase(username) || "admin@example.com".equalsIgnoreCase(username)) {
-                 view.groups = List.of("AdminUser", "RegularUser");
+                 view.setGroups(List.of("AdminUser", "RegularUser"));
              } else {
-                 view.groups = List.of("RegularUser");
+                 view.setGroups(List.of("RegularUser"));
              }
              return view;
         }
@@ -226,16 +226,16 @@ public class CognitoAdminService {
     private Comparator<CognitoUserView> comparatorFor(String sortBy) {
         String field = sortBy == null ? "username" : sortBy.trim().toLowerCase(Locale.ROOT);
         return switch (field) {
-            case "email" -> Comparator.comparing(user -> safe(user.email));
-            case "status" -> Comparator.comparing(user -> safe(user.status));
-            case "confirmationstatus" -> Comparator.comparing(user -> safe(user.confirmationStatus));
-            case "emailverified" -> Comparator.comparing(user -> user.emailVerified);
-            case "created" -> Comparator.comparing(user -> safeInstant(user.created));
-            case "lastupdatedtime" -> Comparator.comparing(user -> safeInstant(user.lastUpdatedTime));
-            case "modified" -> Comparator.comparing(user -> safeInstant(user.modified));
-            case "mfasetting" -> Comparator.comparing(user -> safe(user.mfaSetting));
-            case "enabled" -> Comparator.comparing(user -> user.enabled);
-            default -> Comparator.comparing(user -> safe(user.username));
+            case "email" -> Comparator.comparing(user -> safe(user.getEmail()));
+            case "status" -> Comparator.comparing(user -> safe(user.getStatus()));
+            case "confirmationstatus" -> Comparator.comparing(user -> safe(user.getConfirmationStatus()));
+            case "emailverified" -> Comparator.comparing(user -> user.isEmailVerified());
+            case "created" -> Comparator.comparing(user -> safeInstant(user.getCreated()));
+            case "lastupdatedtime" -> Comparator.comparing(user -> safeInstant(user.getLastUpdatedTime()));
+            case "modified" -> Comparator.comparing(user -> safeInstant(user.getModified()));
+            case "mfasetting" -> Comparator.comparing(user -> safe(user.getMfaSetting()));
+            case "enabled" -> Comparator.comparing(user -> user.isEnabled());
+            default -> Comparator.comparing(user -> safe(user.getUsername()));
         };
     }
 
@@ -254,33 +254,33 @@ public class CognitoAdminService {
 
     private CognitoUserView map(UserType user, List<String> groups) {
         CognitoUserView view = new CognitoUserView();
-        view.username = user.username();
-        view.email = attributeValue(user.attributes(), "email");
-        view.emailVerified = parseBoolean(attributeValue(user.attributes(), "email_verified"));
-        view.confirmationStatus = user.userStatusAsString();
-        view.enabled = Boolean.TRUE.equals(user.enabled());
-        view.status = view.enabled ? "Enabled" : "Disabled";
-        view.created = user.userCreateDate();
-        view.lastUpdatedTime = user.userLastModifiedDate();
-        view.modified = user.userLastModifiedDate();
-        view.mfaSetting = "Unknown";
-        view.groups = groups;
+        view.setUsername(user.username());
+        view.setEmail(attributeValue(user.attributes(), "email"));
+        view.setEmailVerified(parseBoolean(attributeValue(user.attributes(), "email_verified")));
+        view.setConfirmationStatus(user.userStatusAsString());
+        view.setEnabled(Boolean.TRUE.equals(user.enabled()));
+        view.setStatus(view.isEnabled() ? "Enabled" : "Disabled");
+        view.setCreated(user.userCreateDate());
+        view.setLastUpdatedTime(user.userLastModifiedDate());
+        view.setModified(user.userLastModifiedDate());
+        view.setMfaSetting("Unknown");
+        view.setGroups(groups);
         return view;
     }
 
     private CognitoUserView map(AdminGetUserResponse user, List<String> groups) {
         CognitoUserView view = new CognitoUserView();
-        view.username = user.username();
-        view.email = attributeValue(user.userAttributes(), "email");
-        view.emailVerified = parseBoolean(attributeValue(user.userAttributes(), "email_verified"));
-        view.confirmationStatus = user.userStatusAsString();
-        view.enabled = Boolean.TRUE.equals(user.enabled());
-        view.status = view.enabled ? "Enabled" : "Disabled";
-        view.created = user.userCreateDate();
-        view.lastUpdatedTime = user.userLastModifiedDate();
-        view.modified = user.userLastModifiedDate();
-        view.mfaSetting = toMfaSetting(user.userMFASettingList());
-        view.groups = groups;
+        view.setUsername(user.username());
+        view.setEmail(attributeValue(user.userAttributes(), "email"));
+        view.setEmailVerified(parseBoolean(attributeValue(user.userAttributes(), "email_verified")));
+        view.setConfirmationStatus(user.userStatusAsString());
+        view.setEnabled(Boolean.TRUE.equals(user.enabled()));
+        view.setStatus(view.isEnabled() ? "Enabled" : "Disabled");
+        view.setCreated(user.userCreateDate());
+        view.setLastUpdatedTime(user.userLastModifiedDate());
+        view.setModified(user.userLastModifiedDate());
+        view.setMfaSetting(toMfaSetting(user.userMFASettingList()));
+        view.setGroups(groups);
         return view;
     }
 

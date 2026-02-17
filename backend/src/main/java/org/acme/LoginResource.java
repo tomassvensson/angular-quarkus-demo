@@ -21,17 +21,19 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @Authenticated
 public class LoginResource {
 
-    @Inject
-    SecurityIdentity identity;
-
-    @Inject
-    OidcSession oidcSession;
-
-    @Inject
-    LoginPolicyService loginPolicyService;
+    private final SecurityIdentity identity;
+    private final OidcSession oidcSession;
+    private final LoginPolicyService loginPolicyService;
 
     @ConfigProperty(name = "app.frontend-base-url")
     String frontendBaseUrl;
+
+    @Inject
+    public LoginResource(SecurityIdentity identity, OidcSession oidcSession, LoginPolicyService loginPolicyService) {
+        this.identity = identity;
+        this.oidcSession = oidcSession;
+        this.loginPolicyService = loginPolicyService;
+    }
 
     @GET
     public Uni<Response> login() {
