@@ -18,6 +18,7 @@ describe('ListDetailComponent', () => {
 
   beforeEach(async () => {
     linkServiceMock = {
+        getMe: vi.fn().mockReturnValue(of({ username: 'me' })),
         getListDetails: vi.fn().mockReturnValue(of({ list: mockList, links: mockLinks })),
         updateList: vi.fn().mockReturnValue(of({ ...mockList, name: 'Updated Name' })),
         addLinkToList: vi.fn().mockReturnValue(of(mockList))
@@ -110,7 +111,7 @@ describe('ListDetailComponent', () => {
     component.newLinkTitle = 'New Link';
     component.addLink();
     
-    expect(linkServiceMock.addLinkToList).toHaveBeenCalledWith('1', 'me', 'http://new.com', 'New Link');
+    expect(linkServiceMock.addLinkToList).toHaveBeenCalledWith('1', 'http://new.com', 'New Link');
     expect(linkServiceMock.getListDetails).toHaveBeenCalledTimes(2); 
   });
 

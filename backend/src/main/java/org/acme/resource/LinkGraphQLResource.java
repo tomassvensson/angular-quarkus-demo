@@ -7,39 +7,49 @@ import org.acme.service.LinkService;
 import org.eclipse.microprofile.graphql.*;
 import io.quarkus.security.Authenticated;
 
+import io.quarkus.security.identity.SecurityIdentity;
+
 import java.util.List;
 
 @GraphQLApi
+@Authenticated
 public class LinkGraphQLResource {
 
     private final LinkService linkService;
+    private final SecurityIdentity identity;
 
     @Inject
-    public LinkGraphQLResource(LinkService linkService) {
+    public LinkGraphQLResource(LinkService linkService, SecurityIdentity identity) {
         this.linkService = linkService;
+        this.identity = identity;
     }
 
     @Query("publishedLists")
-    @Authenticated
     public List<LinkList> getPublishedLists() {
         return linkService.getPublishedLists();
     }
 
     @Query("myLists")
-    public List<LinkList> getMyLists(@Name("owner") String owner) {
-        if (owner == null || owner.isEmpty()) {
-            throw new IllegalArgumentException("Owner is required");
-        }
+    public List<LinkList> getMyLists() {
+        String owner = identity.getPrincipal().getName();
         return linkService.getListsByOwner(owner);
     }
 
     @Query("list")
     public LinkList getList(@Name("id") String id) {
-        return linkService.getList(id);
+        String owner = identity.getPrincipal().getName();
+        LinkList list = linkService.getList(id);
+        
+        // Allow public access if list is published, otherwise restrict to owner
+        if (list != null && !Boolean.TRUE.equals(list.getPublished()) && !owner.equals(list.getOwner())) {
+             throw new SecurityException("Not authorized to view this list");
+        }
+        return list;
     }
 
     @Mutation("createList")
-    public LinkList createList(@Name("owner") String owner, @Name("name") String name) {
+    public LinkList createList(@Name("name") String name) {
+        String owner = identity.getPrincipal().getName();
         return linkService.createList(owner, name);
     }
 
@@ -50,10 +60,10 @@ public class LinkGraphQLResource {
         @Name("published") Boolean published, 
         @Name("linkIds") List<String> linkIds) 
     {
+        String owner = identity.getPrincipal().getName();
         LinkList list = linkService.getList(id);
-        if (list == null) {
-            throw new IllegalArgumentException("List not found");
-        }
+        if (list == null) throw new IllegalArgumentException("List not found");
+        if (!owner.equals(list.getOwner())) throw new SecurityException("Not authorized to update this list");
         
         if (name != null) list.setName(name);
         if (published != null) list.setPublished(published);
@@ -65,12 +75,18 @@ public class LinkGraphQLResource {
 
     @Mutation("deleteList")
     public Boolean deleteList(@Name("id") String id) {
+        String owner = identity.getPrincipal().getName();
+        LinkList list = linkService.getList(id);
+        if (list == null) return true; // Already gone
+        if (!owner.equals(list.getOwner())) throw new SecurityException("Not authorized to delete this list");
+        
         linkService.deleteList(id);
         return true;
     }
 
     @Mutation("createLink")
-    public Link createLink(@Name("owner") String owner, @Name("url") String url, @Name("title") String title) {
+    public Link createLink(@Name("url") String url, @Name("title") String title) {
+        String owner = identity.getPrincipal().getName();
         return linkService.createLink(owner, url, title);
     }
     
@@ -80,9 +96,11 @@ public class LinkGraphQLResource {
     }
     
     @Mutation("addLinkToList")
-    public LinkList addLinkToList(@Name("listId") String listId, @Name("owner") String owner, @Name("url") String url, @Name("title") String title) {
+    public LinkList addLinkToList(@Name("listId") String listId, @Name("url") String url, @Name("title") String title) {
+        String owner = identity.getPrincipal().getName();
         LinkList list = linkService.getList(listId);
         if (list == null) throw new IllegalArgumentException("List not found");
+        if (!owner.equals(list.getOwner())) throw new SecurityException("Not authorized to add links to this list");
         
         Link link = linkService.createLink(owner, url, title);
         list.getLinkIds().add(link.getId());

@@ -73,9 +73,6 @@ export class MyListsComponent implements OnInit {
   private readonly linkService = inject(LinkService);
   private readonly router = inject(Router);
   
-  // TODO: Get actual owner from Auth. Using 'me' for demo.
-  owner = 'me'; 
-  
   lists = signal<LinkList[]>([]);
   newListName = ''; // Template-driven form
 
@@ -84,7 +81,7 @@ export class MyListsComponent implements OnInit {
   }
 
   loadLists() {
-    this.linkService.getMyLists(this.owner).subscribe(data => {
+    this.linkService.getMyLists().subscribe(data => {
       this.lists.set(data);
     });
   }
@@ -101,7 +98,7 @@ export class MyListsComponent implements OnInit {
     const cleanName = this.sanitize(this.newListName);
     if (!cleanName) return;
     
-    this.linkService.createList(this.owner, cleanName).subscribe(newList => {
+    this.linkService.createList(cleanName).subscribe(newList => {
       this.lists.update(lists => [...lists, newList]);
       this.newListName = '';
     });
