@@ -37,7 +37,7 @@ import { LinkList } from '../models';
   `
 })
 export class PublicListsComponent implements OnInit {
-  private linkService = inject(LinkService);
+  private readonly linkService = inject(LinkService);
   lists = signal<LinkList[]>([]);
 
   ngOnInit() {

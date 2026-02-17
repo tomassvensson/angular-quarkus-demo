@@ -25,11 +25,8 @@ import java.nio.charset.StandardCharsets;
 @Path("/logout")
 public class LogoutResource {
 
-    @Inject
-    SecurityIdentity identity;
-
-    @Inject
-    OidcSession oidcSession;
+    private final SecurityIdentity identity;
+    private final OidcSession oidcSession;
 
     @ConfigProperty(name = "quarkus.oidc.client-id")
     String clientId;
@@ -45,6 +42,12 @@ public class LogoutResource {
 
     @ConfigProperty(name = "app.frontend-base-url")
     String frontendBaseUrl;
+
+    @Inject
+    public LogoutResource(SecurityIdentity identity, OidcSession oidcSession) {
+        this.identity = identity;
+        this.oidcSession = oidcSession;
+    }
 
     @GET
     public Uni<Response> logout() {

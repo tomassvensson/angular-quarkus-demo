@@ -12,8 +12,12 @@ import jakarta.ws.rs.core.MediaType;
 @Authenticated
 public class UserResource {
 
+    private final SecurityIdentity identity;
+
     @Inject
-    SecurityIdentity identity;
+    public UserResource(SecurityIdentity identity) {
+        this.identity = identity;
+    }
 
     @GET
     @Produces(MediaType.TEXT_PLAIN)
