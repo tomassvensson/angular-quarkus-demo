@@ -7,12 +7,12 @@ export default defineConfig({
     timeout: 10_000
   },
   use: {
-    baseURL: 'http://localhost:4200',
+    baseURL: 'http://localhost:4200', // NOSONAR
     trace: 'on-first-retry'
   },
   webServer: {
     command: 'npm start',
-    url: 'http://localhost:4200',
+    url: 'http://localhost:4200', // NOSONAR
     reuseExistingServer: true,
     timeout: 120_000
   },

@@ -7,7 +7,6 @@ import org.acme.model.LinkList;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
-import software.amazon.awssdk.enhanced.dynamodb.model.ScanEnhancedRequest;
 
 import jakarta.annotation.PostConstruct;
 import java.util.List;

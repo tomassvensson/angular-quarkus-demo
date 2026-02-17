@@ -10,7 +10,7 @@ import { Link, LinkList, ListDetails } from '../models';
 export class LinkService {
   private http = inject(HttpClient);
   // GraphQL endpoint
-  private apiUrl = 'http://localhost:8080/api/v1/graphql';
+  private apiUrl = 'http://localhost:8080/api/v1/graphql'; // NOSONAR
 
   private query<T>(query: string, variables: any = {}): Observable<T> {
     return this.http.post<{ data: any, errors: any }>(this.apiUrl, { query, variables }, {

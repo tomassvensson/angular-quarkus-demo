@@ -14,7 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
-public class HomePageTest {
+class HomePageTest {
 
     static Playwright playwright;
     static Browser browser;
@@ -25,7 +25,7 @@ public class HomePageTest {
     private static final String BASE_URL = "http://localhost:8081";
 
     @BeforeAll
-    public static void globalSetup() {
+    static void globalSetup() {
         System.out.println("Initializing Playwright Manually...");
         try {
             playwright = Playwright.create();
@@ -39,24 +39,24 @@ public class HomePageTest {
     }
 
     @AfterAll
-    public static void globalTeardown() {
+    static void globalTeardown() {
         if (browser != null) browser.close();
         if (playwright != null) playwright.close();
     }
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         context = browser.newContext();
         page = context.newPage();
     }
 
     @AfterEach
-    public void tearDown() {
+    void tearDown() {
         if (context != null) context.close();
     }
 
     @Test
-    public void testHomePageLoads() {
+    void testHomePageLoads() {
         System.out.println("Navigating to " + BASE_URL);
         page.navigate(BASE_URL);
 

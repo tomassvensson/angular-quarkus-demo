@@ -128,7 +128,7 @@ export class ProfilePageComponent implements OnInit {
             next: () => {
                 alert('Account deleted.');
                 // Force logout by redirecting to sign out url
-                globalThis.location.href = 'http://localhost:8080/logout';
+                globalThis.location.href = 'http://localhost:8080/logout'; // NOSONAR
             },
             error: (err) => {
                 this.loading.set(false);

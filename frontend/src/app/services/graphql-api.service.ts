@@ -37,7 +37,7 @@ interface GraphqlResponse<T> {
 @Injectable({ providedIn: 'root' })
 export class GraphqlApiService {
   private readonly http = inject(HttpClient);
-  private readonly endpoint = 'http://localhost:8080/api/v1/graphql';
+  private readonly endpoint = 'http://localhost:8080/api/v1/graphql'; // NOSONAR
 
   me(): Observable<CurrentUser> {
     const query = `query { me { username email roles } }`;

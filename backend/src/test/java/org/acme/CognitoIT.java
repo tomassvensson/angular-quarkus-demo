@@ -1,7 +1,6 @@
 package org.acme;
 
 import io.quarkus.test.junit.QuarkusIntegrationTest;
-import io.quarkus.test.common.QuarkusTestResource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.TestMethodOrder;
@@ -10,11 +9,10 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 
 @QuarkusIntegrationTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-public class CognitoIT {
+class CognitoIT {
 
     // Note: Full end-to-end testing with real Cognito requires opening a browser
     // or simulating the full OAuth2 flow (auth code exchange), which is complex in REST Assured.
@@ -22,7 +20,7 @@ public class CognitoIT {
     
     @Test
     @Order(1)
-    public void testHomePageIsPublic() {
+    void testHomePageIsPublic() {
         given()
                 .when().get("/")
                 .then()
@@ -32,7 +30,7 @@ public class CognitoIT {
 
     @Test
     @Order(2)
-    public void testProtectedEndpointRedirectsToLogin() {
+    void testProtectedEndpointRedirectsToLogin() {
         // Accessing /user without auth should redirect (302) when OIDC is enabled,
         // or return 401 when OIDC is intentionally disabled in CI.
         given()

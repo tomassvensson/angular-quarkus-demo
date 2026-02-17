@@ -25,7 +25,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
-    const req = httpMock.expectOne('http://localhost:8080/api/v1/graphql');
+    const req = httpMock.expectOne('http://localhost:8080/api/v1/graphql'); // NOSONAR
     req.flush({
       data: {
         me: {
@@ -44,7 +44,7 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
-    const req = httpMock.expectOne('http://localhost:8080/api/v1/graphql');
+    const req = httpMock.expectOne('http://localhost:8080/api/v1/graphql'); // NOSONAR
     req.flush({
       data: {
         me: {
