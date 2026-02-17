@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { Link, LinkList, ListDetails } from '../models';
+import { LinkList, ListDetails } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -31,9 +31,9 @@ export class LinkService {
     return this.query<{ publishedLists: LinkList[] }>(q).pipe(map(d => d.publishedLists));
   }
 
-  getMyLists(owner: string): Observable<LinkList[]> {
-    const q = `query getMyLists($owner: String) { myLists(owner: $owner) { id name owner published createdAt linkIds } }`;
-    return this.query<{ myLists: LinkList[] }>(q, { owner }).pipe(map(d => d.myLists));
+  getMyLists(): Observable<LinkList[]> {
+    const q = `query getMyLists { myLists { id name owner published createdAt linkIds } }`;
+    return this.query<{ myLists: LinkList[] }>(q).pipe(map(d => d.myLists));
   }
 
   getList(id: string): Observable<LinkList> {
@@ -51,9 +51,9 @@ export class LinkService {
     return this.query<{ listDetails: ListDetails }>(q, { id }).pipe(map(d => d.listDetails));
   }
 
-  createList(owner: string, name: string): Observable<LinkList> {
-    const m = `mutation createList($owner: String, $name: String) { createList(owner: $owner, name: $name) { id name owner published linkIds } }`;
-    return this.query<{ createList: LinkList }>(m, { owner, name }).pipe(map(d => d.createList));
+  createList(name: string): Observable<LinkList> {
+    const m = `mutation createList($name: String) { createList(name: $name) { id name owner published linkIds } }`;
+    return this.query<{ createList: LinkList }>(m, { name }).pipe(map(d => d.createList));
   }
 
   updateList(id: string, updates: Partial<LinkList>): Observable<LinkList> {
@@ -75,11 +75,16 @@ export class LinkService {
     return this.query<{ deleteList: boolean }>(m, { id }).pipe(map(() => void 0));
   }
 
-  addLinkToList(listId: string, owner: string, url: string, title: string): Observable<LinkList> {
-    const m = `mutation addLinkToList($listId: String, $owner: String, $url: String, $title: String) { 
-        addLinkToList(listId: $listId, owner: $owner, url: $url, title: $title) { id linkIds } 
+  addLinkToList(listId: string, url: string, title: string): Observable<LinkList> {
+    const m = `mutation addLinkToList($listId: String, $url: String, $title: String) { 
+        addLinkToList(listId: $listId, url: $url, title: $title) { id linkIds } 
     }`;
-    return this.query<{ addLinkToList: LinkList }>(m, { listId, owner, url, title }).pipe(map(d => d.addLinkToList));
+    return this.query<{ addLinkToList: LinkList }>(m, { listId, url, title }).pipe(map(d => d.addLinkToList));
+  }
+
+  getMe(): Observable<{ username: string }> {
+    const q = `query { me { username } }`;
+    return this.query<{ me: { username: string } }>(q).pipe(map(d => d.me));
   }
 }
 

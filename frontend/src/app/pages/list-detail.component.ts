@@ -94,8 +94,7 @@ export class ListDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly linkService = inject(LinkService);
 
-  // Hardcoded for demo
-  currentUser = 'me';
+  currentUser = signal<string>('');
 
   list = signal<LinkList | null>(null);
   links = signal<Link[]>([]);
@@ -107,6 +106,9 @@ export class ListDetailComponent implements OnInit {
   editNameValue = '';
 
   ngOnInit() {
+    this.linkService.getMe().subscribe(user => {
+      this.currentUser.set(user.username);
+    });
     this.route.paramMap.subscribe(params => {
         const id = params.get('id');
         if (id) this.loadList(id);
@@ -126,7 +128,7 @@ export class ListDetailComponent implements OnInit {
   }
 
   isOwner(l: LinkList): boolean {
-    return l.owner === this.currentUser;
+    return l.owner === this.currentUser();
   }
 
   startEditName(l: LinkList) {
@@ -184,7 +186,7 @@ export class ListDetailComponent implements OnInit {
         return;
     }
 
-    this.linkService.addLinkToList(l.id, this.currentUser, cleanUrl, cleanTitle).subscribe(updatedList => {
+    this.linkService.addLinkToList(l.id, cleanUrl, cleanTitle).subscribe(updatedList => {
         // Refresh details or push link manually. API returns list.
         // We need the link object. For simplicity let's reload or assume API returns link?
         // My API addLinkToList currently returns LinkList.

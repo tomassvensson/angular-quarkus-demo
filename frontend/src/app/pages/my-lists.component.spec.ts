@@ -41,14 +41,14 @@ describe('MyListsComponent', () => {
 
   it('should create and load lists', () => {
     expect(component).toBeTruthy();
-    expect(linkServiceMock.getMyLists).toHaveBeenCalledWith('me');
+    expect(linkServiceMock.getMyLists).toHaveBeenCalled();
     expect(component.lists().length).toBe(2);
   });
 
   it('should create a new list', () => {
     component.newListName = 'New List';
     component.createList();
-    expect(linkServiceMock.createList).toHaveBeenCalledWith('me', 'New List');
+    expect(linkServiceMock.createList).toHaveBeenCalledWith('New List');
     expect(component.lists().length).toBe(3);
     expect(component.newListName).toBe('');
   });
@@ -63,7 +63,7 @@ describe('MyListsComponent', () => {
     // Tests that tags are stripped. Content inside tags might remain but without tags it's just text.
     component.newListName = '<b>Bold</b> Name';
     component.createList();
-    expect(linkServiceMock.createList).toHaveBeenCalledWith('me', 'Bold Name');
+    expect(linkServiceMock.createList).toHaveBeenCalledWith('Bold Name');
   });
 
   it('should toggle publish status', () => {

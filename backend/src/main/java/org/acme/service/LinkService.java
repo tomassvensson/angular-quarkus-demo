@@ -98,13 +98,13 @@ public class LinkService {
         // Let's iterate all scan results for simplicity in this prototype.
         return listTable.scan().items().stream()
                 .filter(l -> owner.equals(l.getOwner()))
-                .collect(Collectors.toList());
+                .toList();
     }
     
     public List<LinkList> getPublishedLists() {
         return listTable.scan().items().stream()
                 .filter(l -> Boolean.TRUE.equals(l.getPublished()))
-                .collect(Collectors.toList());
+                .toList();
     }
 
     public LinkList getList(String id) {

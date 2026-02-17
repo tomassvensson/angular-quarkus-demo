@@ -22,6 +22,9 @@ import java.util.List;
 @Authenticated
 public class UserGraphQLApi {
 
+    private static final String ADMIN_ROLE = "AdminUser";
+    private static final String AWS_ADMIN_ROLE = "admin";
+
     private final SecurityIdentity identity;
     private final CognitoAdminService cognitoAdminService;
 
@@ -46,7 +49,7 @@ public class UserGraphQLApi {
     }
 
     @Query("users")
-    @RolesAllowed({"AdminUser", "admin"})
+    @RolesAllowed({ADMIN_ROLE, AWS_ADMIN_ROLE})
     public CognitoUserPage users(
             @DefaultValue("0") int page,
             @DefaultValue("10") int size,
@@ -58,7 +61,7 @@ public class UserGraphQLApi {
     @Query("user")
     @Authenticated
     public CognitoUserView user(String username) {
-        boolean isAdmin = identity.getRoles().contains("AdminUser") || identity.getRoles().contains("admin");
+        boolean isAdmin = identity.getRoles().contains(ADMIN_ROLE) || identity.getRoles().contains(AWS_ADMIN_ROLE);
         if (!isAdmin) {
              String me = identity.getPrincipal().getName();
              if (!me.equals(username)) {
@@ -69,7 +72,7 @@ public class UserGraphQLApi {
     }
 
     @Mutation("updateUser")
-    @RolesAllowed({"AdminUser", "admin"})
+    @RolesAllowed({ADMIN_ROLE, AWS_ADMIN_ROLE})
     public CognitoUserView updateUser(UpdateUserInput input) {
         return cognitoAdminService.updateUser(input);
     }
@@ -77,7 +80,7 @@ public class UserGraphQLApi {
     @Mutation("deleteUser")
     @Authenticated
     public boolean deleteUser(String username) {
-        boolean isAdmin = identity.getRoles().contains("AdminUser") || identity.getRoles().contains("admin");
+        boolean isAdmin = identity.getRoles().contains(ADMIN_ROLE) || identity.getRoles().contains(AWS_ADMIN_ROLE);
         if (!isAdmin) {
             String me = identity.getPrincipal().getName();
             if (!me.equals(username)) {
@@ -88,8 +91,8 @@ public class UserGraphQLApi {
     }
 
     @Query("groups")
-    @RolesAllowed({"AdminUser", "admin"})
+    @RolesAllowed({ADMIN_ROLE, AWS_ADMIN_ROLE})
     public List<String> groups() {
-        return List.of("RegularUser", "AdminUser", "OwnerUser", "NoPermissionsTestUser");
+        return List.of("RegularUser", ADMIN_ROLE, "OwnerUser", "NoPermissionsTestUser");
     }
 }
