@@ -10,10 +10,13 @@ import { Link, LinkList, ListDetails } from '../models';
 export class LinkService {
   private http = inject(HttpClient);
   // GraphQL endpoint
-  private apiUrl = 'http://localhost:8080/graphql';
+  private apiUrl = 'http://localhost:8080/api/v1/graphql';
 
   private query<T>(query: string, variables: any = {}): Observable<T> {
-    return this.http.post<{ data: any, errors: any }>(this.apiUrl, { query, variables })
+    return this.http.post<{ data: any, errors: any }>(this.apiUrl, { query, variables }, {
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      withCredentials: true
+    })
       .pipe(map(result => {
         if (result.errors) {
             console.error(result.errors);
@@ -49,19 +52,22 @@ export class LinkService {
   }
 
   createList(owner: string, name: string): Observable<LinkList> {
-    const m = `mutation createList($owner: String, $name: String) { createList(owner: $owner, name: $name) { id name owner published } }`;
+    const m = `mutation createList($owner: String, $name: String) { createList(owner: $owner, name: $name) { id name owner published linkIds } }`;
     return this.query<{ createList: LinkList }>(m, { owner, name }).pipe(map(d => d.createList));
   }
 
   updateList(id: string, updates: Partial<LinkList>): Observable<LinkList> {
-    // Construct input object dynamically or use specific input type
-    const input: any = {};
-    if (updates.name !== undefined) input.name = updates.name;
-    if (updates.published !== undefined) input.published = updates.published;
-    if (updates.linkIds !== undefined) input.linkIds = updates.linkIds;
-
-    const m = `mutation updateList($id: String, $input: UpdateListInput) { updateList(id: $id, input: $input) { id name owner published updatedAt linkIds } }`;
-    return this.query<{ updateList: LinkList }>(m, { id, input }).pipe(map(d => d.updateList));
+    const m = `mutation updateList($id: String, $name: String, $published: Boolean, $linkIds: [String]) { 
+      updateList(id: $id, name: $name, published: $published, linkIds: $linkIds) { 
+        id name owner published updatedAt linkIds 
+      } 
+    }`;
+    return this.query<{ updateList: LinkList }>(m, { 
+      id, 
+      name: updates.name, 
+      published: updates.published, 
+      linkIds: updates.linkIds 
+    }).pipe(map(d => d.updateList));
   }
 
   deleteList(id: string): Observable<void> {

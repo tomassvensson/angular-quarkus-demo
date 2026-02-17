@@ -2,26 +2,35 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MyListsComponent } from './my-lists.component';
 import { LinkService } from '../services/link.service';
 import { of } from 'rxjs';
+import { RouterTestingModule } from '@angular/router/testing';
 import { ActivatedRoute } from '@angular/router';
+import { DatePipe } from '@angular/common';
+import { vi } from 'vitest';
 
 describe('MyListsComponent', () => {
   let component: MyListsComponent;
   let fixture: ComponentFixture<MyListsComponent>;
   let linkServiceMock: any;
 
+  const mockLists = [
+    { id: '1', name: 'List 1', owner: 'me', published: false, createdAt: new Date().toISOString(), linkIds: [] },
+    { id: '2', name: 'List 2', owner: 'me', published: true, createdAt: new Date().toISOString(), linkIds: ['l1'] }
+  ];
+
   beforeEach(async () => {
     linkServiceMock = {
-      getMyLists: () => of([]),
-      createList: (owner: string, name: string) => of({ id: '1', owner, name, published: false, linkIds: [] }),
-      updateList: () => of({}),
-      deleteList: () => of(void 0)
+      getMyLists: vi.fn().mockReturnValue(of(mockLists)),
+      createList: vi.fn().mockReturnValue(of({ id: '3', name: 'New List', owner: 'me', published: false, createdAt: new Date().toISOString(), linkIds: [] })),
+      updateList: vi.fn().mockReturnValue(of({ id: '1', name: 'List 1', owner: 'me', published: true, createdAt: new Date().toISOString(), linkIds: [] })),
+      deleteList: vi.fn().mockReturnValue(of(void 0))
     };
 
     await TestBed.configureTestingModule({
-      imports: [MyListsComponent],
+      imports: [MyListsComponent, RouterTestingModule],
       providers: [
         { provide: LinkService, useValue: linkServiceMock },
-        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } }
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } },
+        DatePipe
       ]
     }).compileComponents();
     
@@ -30,7 +39,46 @@ describe('MyListsComponent', () => {
     fixture.detectChanges();
   });
 
-  it('should create', () => {
+  it('should create and load lists', () => {
     expect(component).toBeTruthy();
+    expect(linkServiceMock.getMyLists).toHaveBeenCalledWith('me');
+    expect(component.lists().length).toBe(2);
+  });
+
+  it('should create a new list', () => {
+    component.newListName = 'New List';
+    component.createList();
+    expect(linkServiceMock.createList).toHaveBeenCalledWith('me', 'New List');
+    expect(component.lists().length).toBe(3);
+    expect(component.newListName).toBe('');
+  });
+
+  it('should not create a list with empty name', () => {
+    component.newListName = '   ';
+    component.createList();
+    expect(linkServiceMock.createList).not.toHaveBeenCalled();
+  });
+
+  it('should sanitize list name', () => {
+    // Tests that tags are stripped. Content inside tags might remain but without tags it's just text.
+    component.newListName = '<b>Bold</b> Name';
+    component.createList();
+    expect(linkServiceMock.createList).toHaveBeenCalledWith('me', 'Bold Name');
+  });
+
+  it('should toggle publish status', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const listToToggle = mockLists[0];
+    component.togglePublish(listToToggle);
+    expect(linkServiceMock.updateList).toHaveBeenCalledWith('1', { published: true });
+  });
+
+  it('should delete a list', () => {
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    const listToDelete = mockLists[0];
+    component.deleteList(listToDelete);
+    expect(linkServiceMock.deleteList).toHaveBeenCalledWith('1');
+    expect(component.lists().length).toBe(1);
+    expect(component.lists()[0].id).toBe('2');
   });
 });

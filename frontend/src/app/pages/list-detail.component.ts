@@ -17,14 +17,14 @@ import { LinkList, Link } from '../models';
             @if (isOwner(l) && editingName) {
                 <div class="flex gap-2">
                     <input [(ngModel)]="editNameValue" class="border p-1 rounded" />
-                    <button (click)="saveName()" class="bg-blue-500 text-white px-2 rounded">Save</button>
-                    <button (click)="cancelEditName()" class="text-gray-500 px-2">Cancel</button>
+                    <button (click)="saveName()" class="bg-blue-500 text-white px-2 rounded cursor-pointer">Save</button>
+                    <button (click)="cancelEditName()" class="text-gray-500 px-2 cursor-pointer">Cancel</button>
                 </div>
             } @else {
                 <h1 class="text-2xl font-bold flex items-center gap-2">
                     {{ l.name }}
                     @if (isOwner(l)) {
-                        <button (click)="startEditName(l)" class="text-sm text-blue-500 font-normal border px-1 rounded hover:bg-gray-100">
+                        <button (click)="startEditName(l)" class="text-sm text-blue-500 font-normal border px-1 rounded hover:bg-gray-100 cursor-pointer">
                             Edit Name
                         </button>
                     }
@@ -33,12 +33,12 @@ import { LinkList, Link } from '../models';
              <div class="flex gap-2">
                  @if (isOwner(l)) {
                     @if (l.published) {
-                        <button (click)="togglePublish(l)" class="bg-yellow-500 text-white px-3 py-1 rounded">Unpublish</button>
+                        <button (click)="togglePublish(l)" class="bg-yellow-500 text-white px-3 py-1 rounded cursor-pointer">Unpublish</button>
                     } @else {
-                        <button (click)="togglePublish(l)" class="bg-green-500 text-white px-3 py-1 rounded">Publish</button>
+                        <button (click)="togglePublish(l)" class="bg-green-500 text-white px-3 py-1 rounded cursor-pointer">Publish</button>
                     }
                  }
-                 <a routerLink="/my-lists" class="text-gray-600 underline self-center ml-4">My Lists</a>
+                 <a routerLink="/my-lists" class="text-gray-600 underline self-center ml-4 cursor-pointer">My Lists</a>
              </div>
           </div>
           
@@ -56,7 +56,7 @@ import { LinkList, Link } from '../models';
             <div class="flex gap-2 flex-wrap">
               <input [(ngModel)]="newLinkUrl" placeholder="URL (https://...)" class="border p-2 rounded flex-1" />
               <input [(ngModel)]="newLinkTitle" placeholder="Title" class="border p-2 rounded flex-1" />
-              <button (click)="addLink()" class="bg-blue-600 text-white px-4 py-2 rounded">Add Link</button>
+              <button (click)="addLink()" class="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">Add Link</button>
             </div>
           </div>
         }
@@ -65,7 +65,7 @@ import { LinkList, Link } from '../models';
           @for (link of links(); track link.id) {
             <div class="border p-3 rounded hover:bg-gray-50 flex justify-between items-center bg-white">
               <div>
-                <a [href]="link.url" target="_blank" class="text-blue-600 font-medium hover:underline text-lg">
+                <a [href]="link.url" target="_blank" class="text-blue-600 font-medium hover:underline text-lg cursor-pointer">
                   {{ link.title }}
                 </a>
                 <div class="text-xs text-gray-400">
@@ -73,7 +73,7 @@ import { LinkList, Link } from '../models';
                 </div>
               </div>
               @if (isOwner(l)) {
-                <button (click)="removeLink(link)" class="text-red-500 hover:text-red-700">
+                <button (click)="removeLink(link)" class="text-red-500 hover:text-red-700 cursor-pointer">
                   Remove
                 </button>
               }
@@ -138,16 +138,22 @@ export class ListDetailComponent implements OnInit {
     this.editingName = false;
   }
 
+  private sanitize(input: string): string {
+    return input.replace(/<[^>]*>?/gm, '').trim();
+  }
+
   saveName() {
     const l = this.list();
-    if (!l || !this.editNameValue.trim()) return;
+    const cleanName = this.sanitize(this.editNameValue);
+    
+    if (!l || !cleanName) return;
 
     // Requirement 2e: Confirm on update? Prompt says "actions on lists... Publish, Unpublish, Delete".
     // 2g says "The owner can edit the list including its name".
     // It says "For these three actions (Publish, Unpublish, Delete)... confirm".
     // Editing name doesn't require confirmation per spec, usually. 
     
-    this.linkService.updateList(l.id, { name: this.editNameValue }).subscribe(updated => {
+    this.linkService.updateList(l.id, { name: cleanName }).subscribe(updated => {
         this.list.update(curr => curr ? ({ ...curr, name: updated.name, updatedAt: updated.updatedAt }) : null);
         this.editingName = false;
     });
@@ -165,9 +171,20 @@ export class ListDetailComponent implements OnInit {
 
   addLink() {
     const l = this.list();
-    if (!l || !this.newLinkUrl || !this.newLinkTitle) return;
+    const cleanTitle = this.sanitize(this.newLinkTitle);
+    const cleanUrl = this.newLinkUrl.trim();
+    
+    if (!l || !cleanUrl || !cleanTitle) return;
 
-    this.linkService.addLinkToList(l.id, this.currentUser, this.newLinkUrl, this.newLinkTitle).subscribe(updatedList => {
+    // Basic URL validation
+    try {
+        new URL(cleanUrl);
+    } catch (_) {
+        alert('Please enter a valid URL (e.g. https://example.com)');
+        return;
+    }
+
+    this.linkService.addLinkToList(l.id, this.currentUser, cleanUrl, cleanTitle).subscribe(updatedList => {
         // Refresh details or push link manually. API returns list.
         // We need the link object. For simplicity let's reload or assume API returns link?
         // My API addLinkToList currently returns LinkList.

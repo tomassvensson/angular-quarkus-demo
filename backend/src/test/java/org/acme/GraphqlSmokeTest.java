@@ -18,7 +18,12 @@ class GraphqlSmokeTest {
                 .body("{\"query\":\"query { me { username } }\"}")
                 .when().post("/api/v1/graphql")
                 .then()
-                .statusCode(anyOf(is(302), is(401)));
+                // GraphQL endpoint is public (200), but 'me' query is protected
+                // and should return an error or null data when unauthenticated.
+                // SmallRye GraphQL returns 200 with errors in the body for auth failures by default.
+                .statusCode(200)
+                .body("errors", org.hamcrest.Matchers.notNullValue())
+                .body("data.me", org.hamcrest.Matchers.nullValue());
     }
 
     @Test

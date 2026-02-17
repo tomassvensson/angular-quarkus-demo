@@ -90,4 +90,20 @@ class LinkResourceTest {
                 .statusCode(200)
                 .body("data.deleteList", is(true));
     }
+
+    @Test
+    void testUnauthenticatedPublishedLists() {
+        // Accessing publishedLists without auth should fail (GraphQL error or 401 depending on config)
+        // Since we allow public access to /api/v1/graphql, the security check happens at method level
+        // and SmallRye GraphQL catches the exception returning 200 with errors.
+        String publishedQuery = "query { publishedLists { id } }";
+        
+        given()
+            .contentType(ContentType.JSON)
+            .body("{\"query\": \"" + publishedQuery.replace("\"", "\\\"") + "\"}")
+            .when().post("/api/v1/graphql")
+            .then()
+                .statusCode(anyOf(is(200), is(401))) // Accept either, then check body if 200
+                .body(containsString("errors")); 
+    }
 }

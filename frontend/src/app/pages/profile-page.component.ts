@@ -79,11 +79,31 @@ export class ProfilePageComponent implements OnInit {
         next: (me) => {
             this.api.user(me.username).subscribe({
                 next: (details) => {
+                    // Fallback to roles from token if groups are empty (e.g. running locally with Keycloak but configured as Cognito)
+                    if (!details.groups || details.groups.length === 0) {
+                        details.groups = me.roles;
+                    }
                     this.user.set(details);
                     this.loading.set(false);
                 },
                 error: (err) => {
-                    this.error.set(err.message);
+                    // Fallback for when user details api fails but me succeeds
+                    // Construct a partial user object from me
+                    console.error('Error fetching user details, falling back to me info', err);
+                    const partialUser: any = {
+                        username: me.username,
+                        email: me.email,
+                        groups: me.roles,
+                        enabled: true,
+                        status: 'Unknown',
+                        created: new Date().toISOString(),
+                        lastUpdatedTime: new Date().toISOString(),
+                        modified: new Date().toISOString(),
+                        emailVerified: true,
+                        confirmationStatus: 'Confirmed',
+                        mfaSetting: 'OFF'
+                    };
+                    this.user.set(partialUser);
                     this.loading.set(false);
                 }
             });

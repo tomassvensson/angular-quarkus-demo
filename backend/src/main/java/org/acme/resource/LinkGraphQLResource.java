@@ -5,6 +5,7 @@ import org.acme.model.Link;
 import org.acme.model.LinkList;
 import org.acme.service.LinkService;
 import org.eclipse.microprofile.graphql.*;
+import io.quarkus.security.Authenticated;
 
 import java.util.List;
 import java.util.Set;
@@ -16,6 +17,7 @@ public class LinkGraphQLResource {
     LinkService linkService;
 
     @Query("publishedLists")
+    @Authenticated
     public List<LinkList> getPublishedLists() {
         return linkService.getPublishedLists();
     }

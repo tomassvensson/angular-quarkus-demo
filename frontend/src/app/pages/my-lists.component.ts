@@ -1,7 +1,7 @@
 import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
 import { LinkService } from '../services/link.service';
 import { LinkList } from '../models';
 
@@ -20,38 +20,39 @@ import { LinkList } from '../models';
           class="border p-2 rounded"
           (keyup.enter)="createList()"
         />
-        <button (click)="createList()" class="bg-blue-500 text-white px-4 py-2 rounded">
+        <button (click)="createList()" class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer">
           Create List
         </button>
       </div>
 
       <div class="grid gap-4">
         @for (list of lists(); track list.id) {
-          <div class="border p-4 rounded shadow bg-white">
+          <div 
+             class="border p-4 rounded shadow bg-white hover:bg-gray-50 cursor-pointer transition-colors"
+             (click)="goToList(list.id)"
+          >
             <div class="flex justify-between items-start">
               <div>
-                <h2 class="text-xl font-semibold">
-                    <a [routerLink]="['/lists', list.id]" class="text-blue-600 hover:underline">
-                        {{ list.name }}
-                    </a>
+                <h2 class="text-xl font-semibold text-blue-600 hover:underline">
+                    {{ list.name }}
                 </h2>
                 <div class="text-sm text-gray-500">
-                  Created: {{ list.createdAt | date:'short' }} | 
-                  Published: {{ list.published ? 'Yes' : 'No' }} | 
-                  Links: {{ list.linkIds.length || 0 }}
+                  Created: {{ list.createdAt | date:'short' }} |
+                  Published: {{ list.published ? 'Yes' : 'No' }} |
+                  Links: {{ list.linkIds?.length || 0 }}
                 </div>
               </div>
-              <div class="flex gap-2">
+              <div class="flex gap-2" (click)="$event.stopPropagation()">
                 @if (list.published) {
-                  <button (click)="togglePublish(list)" class="bg-yellow-500 text-white px-2 py-1 rounded text-sm">
+                  <button (click)="togglePublish(list)" class="bg-yellow-500 text-white px-2 py-1 rounded text-sm cursor-pointer hover:bg-yellow-600">
                     Unpublish
                   </button>
                 } @else {
-                  <button (click)="togglePublish(list)" class="bg-green-500 text-white px-2 py-1 rounded text-sm">
+                  <button (click)="togglePublish(list)" class="bg-green-500 text-white px-2 py-1 rounded text-sm cursor-pointer hover:bg-green-600">
                     Publish
                   </button>
                 }
-                <button (click)="deleteList(list)" class="bg-red-500 text-white px-2 py-1 rounded text-sm">
+                <button (click)="deleteList(list)" class="bg-red-500 text-white px-2 py-1 rounded text-sm cursor-pointer hover:bg-red-600">
                   Delete
                 </button>
               </div>
@@ -70,6 +71,7 @@ import { LinkList } from '../models';
 })
 export class MyListsComponent implements OnInit {
   private linkService = inject(LinkService);
+  private router = inject(Router);
   
   // TODO: Get actual owner from Auth. Using 'me' for demo.
   owner = 'me'; 
@@ -87,9 +89,19 @@ export class MyListsComponent implements OnInit {
     });
   }
 
+  goToList(id: string) {
+    this.router.navigate(['/lists', id]);
+  }
+
+  private sanitize(input: string): string {
+    return input.replace(/<[^>]*>?/gm, '').trim();
+  }
+
   createList() {
-    if (!this.newListName.trim()) return;
-    this.linkService.createList(this.owner, this.newListName).subscribe(newList => {
+    const cleanName = this.sanitize(this.newListName);
+    if (!cleanName) return;
+    
+    this.linkService.createList(this.owner, cleanName).subscribe(newList => {
       this.lists.update(lists => [...lists, newList]);
       this.newListName = '';
     });
