@@ -85,10 +85,11 @@ public class LinkService {
 
         // Create tables if not exist (mostly for local development)
         try {
+            // For DynamoDB Enhanced, we can just call createTable() and catch if it exists
             linkTable.createTable();
             listTable.createTable();
         } catch (Exception e) {
-            // Ignore if already exists
+            // Ignore if already exists or other creation error
         }
     }
 
