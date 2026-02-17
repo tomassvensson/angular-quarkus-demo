@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4 # NOSONAR
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v4 # NOSONAR
         with:
           node-version: '20'
           cache: npm
@@ -32,7 +32,7 @@ jobs:
         run: npm test -- --watch=false --coverage
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v5 # NOSONAR
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: frontend

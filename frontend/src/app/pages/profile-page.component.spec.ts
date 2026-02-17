@@ -2,8 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProfilePageComponent } from './profile-page.component';
 import { GraphqlApiService } from '../services/graphql-api.service';
 import { Router } from '@angular/router';
-import { of, throwError } from 'rxjs';
-import { By } from '@angular/platform-browser';
+import { of } from 'rxjs';
 
 describe('ProfilePageComponent', () => {
   let component: ProfilePageComponent;
@@ -64,7 +63,7 @@ describe('ProfilePageComponent', () => {
   });
 
   it('should call deleteUser and redirect on delete action', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
     // Mock global location
     const originalLocation = globalThis.location;
     delete (globalThis as any).location;
@@ -79,7 +78,7 @@ describe('ProfilePageComponent', () => {
   });
 
   it('should not delete if confirmation declined', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(false);
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
     component.deleteAccount();
     expect(apiSpy.deleteUser).not.toHaveBeenCalled();
   });

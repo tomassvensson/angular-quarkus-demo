@@ -118,7 +118,7 @@ test.describe('Lists and Links E2E', () => {
                           id: variables.id,
                           name: input.name || 'Updated Name',
                           owner: 'testuser',
-                          published: input.published !== undefined ? input.published : false,
+                          published: input.published ?? false,
                           updatedAt: new Date().toISOString(),
                           linkIds: input.linkIds || []
                       }
@@ -178,7 +178,7 @@ test.describe('Lists and Links E2E', () => {
       
       const requestPromise = page.waitForRequest(req => 
         req.url().includes('/graphql') && 
-        req.postData()?.includes('mutation addLinkToList')
+        (req.postData()?.includes('mutation addLinkToList') ?? false)
       );
       
       await page.getByRole('button', { name: 'Add Link' }).click();

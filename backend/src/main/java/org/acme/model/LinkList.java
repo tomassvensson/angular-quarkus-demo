@@ -22,7 +22,9 @@ public class LinkList {
     private Instant createdAt;
     private Instant updatedAt;
 
-    public LinkList() {}
+    public LinkList() {
+        // Required by DynamoDB Enhanced Client for deserialization
+    }
 
     @DynamoDbPartitionKey
     public String getId() {

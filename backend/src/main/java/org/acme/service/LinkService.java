@@ -4,6 +4,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.acme.model.Link;
 import org.acme.model.LinkList;
+import org.jboss.logging.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
@@ -11,7 +12,6 @@ import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
 import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.primaryPartitionKey;
@@ -20,6 +20,7 @@ import java.time.Instant;
 @ApplicationScoped
 public class LinkService {
 
+    private static final Logger LOG = Logger.getLogger(LinkService.class);
     private final DynamoDbEnhancedClient enhancedClient;
     private DynamoDbTable<Link> linkTable;
     private DynamoDbTable<LinkList> listTable;
@@ -89,7 +90,7 @@ public class LinkService {
             linkTable.createTable();
             listTable.createTable();
         } catch (Exception e) {
-            // Ignore if already exists or other creation error
+            LOG.debug("Table creation skipped (may already exist): " + e.getMessage());
         }
     }
 
@@ -154,6 +155,6 @@ public class LinkService {
         // BatchGet would be better
         return ids.stream()
             .map(this::getLink)
-            .collect(Collectors.toList());
+            .toList();
     }
 }

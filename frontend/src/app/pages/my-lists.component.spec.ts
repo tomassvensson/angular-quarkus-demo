@@ -2,8 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MyListsComponent } from './my-lists.component';
 import { LinkService } from '../services/link.service';
 import { of } from 'rxjs';
-import { RouterTestingModule } from '@angular/router/testing';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, provideRouter } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { vi } from 'vitest';
 
@@ -26,8 +25,9 @@ describe('MyListsComponent', () => {
     };
 
     await TestBed.configureTestingModule({
-      imports: [MyListsComponent, RouterTestingModule],
+      imports: [MyListsComponent],
       providers: [
+        provideRouter([]),
         { provide: LinkService, useValue: linkServiceMock },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } },
         DatePipe
@@ -67,14 +67,14 @@ describe('MyListsComponent', () => {
   });
 
   it('should toggle publish status', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
     const listToToggle = mockLists[0];
     component.togglePublish(listToToggle);
     expect(linkServiceMock.updateList).toHaveBeenCalledWith('1', { published: true });
   });
 
   it('should delete a list', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
     const listToDelete = mockLists[0];
     component.deleteList(listToDelete);
     expect(linkServiceMock.deleteList).toHaveBeenCalledWith('1');

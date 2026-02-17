@@ -77,7 +77,7 @@ public class LinkGraphQLResource {
     public Boolean deleteList(@Name("id") String id) {
         String owner = identity.getPrincipal().getName();
         LinkList list = linkService.getList(id);
-        if (list == null) return true; // Already gone
+        if (list == null) return false; // Already gone
         if (!owner.equals(list.getOwner())) throw new SecurityException("Not authorized to delete this list");
         
         linkService.deleteList(id);

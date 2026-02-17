@@ -1,4 +1,4 @@
-import { Component, inject, signal, Input, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
@@ -7,7 +7,6 @@ import { LinkList, Link } from '../models';
 
 @Component({
   selector: 'app-list-detail',
-  standalone: true,
   imports: [CommonModule, FormsModule, RouterLink, DatePipe],
   template: `
     <div class="p-4">
@@ -94,10 +93,10 @@ export class ListDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly linkService = inject(LinkService);
 
-  currentUser = signal<string>('');
+  readonly currentUser = signal<string>('');
 
-  list = signal<LinkList | null>(null);
-  links = signal<Link[]>([]);
+  readonly list = signal<LinkList | null>(null);
+  readonly links = signal<Link[]>([]);
   
   newLinkUrl = '';
   newLinkTitle = '';
@@ -141,7 +140,7 @@ export class ListDetailComponent implements OnInit {
   }
 
   private sanitize(input: string): string {
-    return input.replace(/<[^>]*>?/gm, '').trim();
+    return input.replaceAll(/<[^>]*>?/gm, '').trim();
   }
 
   saveName() {
@@ -163,7 +162,7 @@ export class ListDetailComponent implements OnInit {
 
   togglePublish(l: LinkList) {
     const action = l.published ? 'unpublish' : 'publish';
-    const conf = window.confirm(`Are you sure you want to ${action} the list "${l.name}"?`);
+    const conf = globalThis.confirm(`Are you sure you want to ${action} the list "${l.name}"?`);
     if (!conf) return;
     
     this.linkService.updateList(l.id, { published: !l.published }).subscribe(updated => {
@@ -181,8 +180,8 @@ export class ListDetailComponent implements OnInit {
     // Basic URL validation
     try {
         new URL(cleanUrl);
-    } catch (_) {
-        alert('Please enter a valid URL (e.g. https://example.com)');
+    } catch {
+        globalThis.alert('Please enter a valid URL (e.g. https://example.com)');
         return;
     }
 

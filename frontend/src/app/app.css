@@ -86,7 +86,7 @@
 .btn:disabled {
 	background: #e5e7eb;
 	border-color: #d1d5db;
-	color: #9ca3af;
+	color: #4b5563;
 	box-shadow: none;
 	cursor: not-allowed;
 }

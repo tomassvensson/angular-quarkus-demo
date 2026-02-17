@@ -70,7 +70,7 @@ describe('AdminUsersPageComponent', () => {
   });
 
   it('should call deleteUser logic when delete button clicked', () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
     
     fixture.detectChanges();
     
