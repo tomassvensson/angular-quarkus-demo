@@ -13,8 +13,8 @@ test.describe('Lists and Links E2E', () => {
       const body = route.request().postData() || '';
       const variables = JSON.parse(body).variables || {};
 
-      // 1. Me (Auth)
-      if (body.includes('query { me { username email roles } }')) {
+      // 1. Me (Auth) — matches both graphqlApiService.me() and linkService.getMe()
+      if (body.includes('{ me {')) {
         return route.fulfill({
           status: 200,
           contentType: 'application/json',

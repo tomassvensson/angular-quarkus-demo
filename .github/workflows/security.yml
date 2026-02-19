@@ -104,6 +104,19 @@ jobs:
         working-directory: frontend
         run: npm test -- --watch=false --coverage
 
+      - name: Generate LCOV report for SonarCloud
+        working-directory: frontend
+        run: |
+          node -e "
+            const covPath = 'coverage/frontend/coverage-final.json';
+            const fs = require('fs');
+            if (!fs.existsSync(covPath)) { console.log('No coverage file found at', covPath); process.exit(0); }
+            const map = require('istanbul-lib-coverage').createCoverageMap(JSON.parse(fs.readFileSync(covPath, 'utf8')));
+            const ctx = require('istanbul-lib-report').createContext({ dir: 'coverage', coverageMap: map });
+            require('istanbul-reports').create('lcovonly').execute(ctx);
+            console.log('Generated coverage/lcov.info');
+          "
+
       - name: Analyze Frontend with SonarCloud
         uses: SonarSource/sonarcloud-github-action@master # NOSONAR
         env:

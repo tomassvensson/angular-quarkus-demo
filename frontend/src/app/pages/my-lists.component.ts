@@ -27,14 +27,14 @@ import { LinkList } from '../models';
 
       <div class="grid gap-4">
         @for (list of lists(); track list.id) {
-          <div 
-             class="border p-4 rounded shadow bg-white hover:bg-gray-50 cursor-pointer transition-colors"
-             (click)="goToList(list.id)"
-          >
+          <div class="border p-4 rounded shadow bg-white hover:bg-gray-50 cursor-pointer transition-colors"
+             (click)="goToList(list.id)">
             <div class="flex justify-between items-start">
               <div>
-                <h2 class="text-xl font-semibold text-blue-600 hover:underline">
-                    {{ list.name }}
+                <h2 class="text-xl font-semibold">
+                    <a [routerLink]="['/lists', list.id]" class="text-blue-600 hover:underline" (click)="$event.stopPropagation()">
+                        {{ list.name }}
+                    </a>
                 </h2>
                 <div class="text-sm text-gray-500">
                   Created: {{ list.createdAt | date:'short' }} |
@@ -81,8 +81,9 @@ export class MyListsComponent implements OnInit {
   }
 
   loadLists() {
-    this.linkService.getMyLists().subscribe(data => {
-      this.lists.set(data);
+    this.linkService.getMyLists().subscribe({
+      next: (data) => this.lists.set(data),
+      error: (err: Error) => console.error('Failed to load lists:', err.message)
     });
   }
 
@@ -91,14 +92,19 @@ export class MyListsComponent implements OnInit {
   }
 
   private sanitize(input: string): string {
-    // Loop to handle nested/incomplete tags like <<script>script>
-    let result = input;
-    let previous: string;
-    do {
-      previous = result;
-      result = result.replaceAll(/<[^>]*>/g, '');
-    } while (result !== previous);
-    return result.replaceAll(/[<>]/g, '').trim();
+    // Strip HTML tags using character iteration (avoids regex backtracking — S5852)
+    let result = '';
+    let inTag = false;
+    for (const ch of input) {
+      if (ch === '<') {
+        inTag = true;
+      } else if (ch === '>') {
+        inTag = false;
+      } else if (!inTag) {
+        result += ch;
+      }
+    }
+    return result.trim();
   }
 
   createList() {

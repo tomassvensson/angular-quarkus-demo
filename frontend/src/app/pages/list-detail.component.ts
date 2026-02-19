@@ -106,8 +106,9 @@ export class ListDetailComponent implements OnInit {
   editNameValue = '';
 
   ngOnInit() {
-    this.linkService.getMe().subscribe(user => {
-      this.currentUser.set(user.username);
+    this.linkService.getMe().subscribe({
+      next: (user) => this.currentUser.set(user.username),
+      error: (err: Error) => console.error('Failed to get current user:', err.message)
     });
     this.route.paramMap.subscribe(params => {
         const id = params.get('id');
@@ -141,14 +142,19 @@ export class ListDetailComponent implements OnInit {
   }
 
   private sanitize(input: string): string {
-    // Loop to handle nested/incomplete tags like <<script>script>
-    let result = input;
-    let previous: string;
-    do {
-      previous = result;
-      result = result.replaceAll(/<[^>]*>/g, '');
-    } while (result !== previous);
-    return result.replaceAll(/[<>]/g, '').trim();
+    // Strip HTML tags using character iteration (avoids regex backtracking — S5852)
+    let result = '';
+    let inTag = false;
+    for (const ch of input) {
+      if (ch === '<') {
+        inTag = true;
+      } else if (ch === '>') {
+        inTag = false;
+      } else if (!inTag) {
+        result += ch;
+      }
+    }
+    return result.trim();
   }
 
   saveName() {
