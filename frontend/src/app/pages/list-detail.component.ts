@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
@@ -7,6 +7,7 @@ import { LinkList, Link } from '../models';
 
 @Component({
   selector: 'app-list-detail',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, RouterLink, DatePipe],
   template: `
     <div class="p-4">
@@ -140,8 +141,8 @@ export class ListDetailComponent implements OnInit {
   }
 
   private sanitize(input: string): string {
-    // Strip angle brackets to prevent any HTML tag or fragment (e.g., <script) from surviving.
-    return input.replace(/[<>]/g, '').trim();
+    // Strip HTML tags first, then any remaining angle brackets
+    return input.replaceAll(/<[^>]*>/g, '').replaceAll(/[<>]/g, '').trim();
   }
 
   saveName() {

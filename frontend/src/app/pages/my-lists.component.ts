@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
@@ -7,6 +7,7 @@ import { LinkList } from '../models';
 
 @Component({
   selector: 'app-my-lists',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [CommonModule, FormsModule, RouterLink, DatePipe],
   template: `
     <div class="p-4">
@@ -90,8 +91,8 @@ export class MyListsComponent implements OnInit {
   }
 
   private sanitize(input: string): string {
-    // Remove angle brackets to prevent any HTML-like content; then trim whitespace.
-    return input.replace(/[<>]/g, '').trim();
+    // Strip HTML tags first, then any remaining angle brackets
+    return input.replaceAll(/<[^>]*>/g, '').replaceAll(/[<>]/g, '').trim();
   }
 
   createList() {

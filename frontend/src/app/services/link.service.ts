@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
-import { LinkList, ListDetails } from '../models';
+import { LinkList, ListDetails, PublishedListsPage } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -26,9 +26,9 @@ export class LinkService {
       }));
   }
 
-  getPublishedLists(): Observable<LinkList[]> {
-    const q = `query { publishedLists { id name owner published createdAt linkIds } }`;
-    return this.query<{ publishedLists: LinkList[] }>(q).pipe(map(d => d.publishedLists));
+  getPublishedLists(page = 0, size = 10): Observable<PublishedListsPage> {
+    const q = `query PublishedLists($page: Int, $size: Int) { publishedLists(page: $page, size: $size) { items { id name owner published createdAt linkIds } page size total } }`;
+    return this.query<{ publishedLists: PublishedListsPage }>(q, { page, size }).pipe(map(d => d.publishedLists));
   }
 
   getMyLists(): Observable<LinkList[]> {

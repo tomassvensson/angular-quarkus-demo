@@ -1,10 +1,12 @@
-import { Component, OnDestroy, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, PLATFORM_ID, computed, inject, signal } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CurrentUser, GraphqlApiService } from './services/graphql-api.service';
+import { LogCollectorService } from './services/log-collector.service';
 
 @Component({
   selector: 'app-root',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './app.html',
   styleUrl: './app.css'
@@ -12,6 +14,7 @@ import { CurrentUser, GraphqlApiService } from './services/graphql-api.service';
 export class App implements OnInit, OnDestroy {
   private readonly api = inject(GraphqlApiService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly logCollector = inject(LogCollectorService);
   private sessionProbeId: ReturnType<typeof setInterval> | null = null;
   private hadAuthenticatedSession = false;
 
@@ -32,6 +35,7 @@ export class App implements OnInit, OnDestroy {
       this.loading.set(false);
       return;
     }
+    this.logCollector.start();
     this.reloadMe();
     this.sessionProbeId = setInterval(() => this.reloadMe(), 60_000);
   }
@@ -41,6 +45,7 @@ export class App implements OnInit, OnDestroy {
       clearInterval(this.sessionProbeId);
       this.sessionProbeId = null;
     }
+    this.logCollector.stop();
   }
 
   protected reloadMe(): void {

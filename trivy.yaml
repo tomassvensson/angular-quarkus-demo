@@ -1,0 +1,21 @@
+severity:
+  - CRITICAL
+  - HIGH
+  - MEDIUM
+
+scan:
+  skip-dirs:
+    - node_modules
+    - .angular
+    - target
+    - .localstack
+
+vulnerability:
+  type:
+    - os
+    - library
+
+misconfiguration:
+  include:
+    - docker
+    - kubernetes
