@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './console-collector.fixture';
 
 test('opens Angular homepage', async ({ page }) => {
   await page.goto('/');

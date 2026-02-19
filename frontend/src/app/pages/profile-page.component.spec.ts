@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ProfilePageComponent } from './profile-page.component';
 import { GraphqlApiService } from '../services/graphql-api.service';
 import { Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 describe('ProfilePageComponent', () => {
   let component: ProfilePageComponent;
@@ -81,5 +81,53 @@ describe('ProfilePageComponent', () => {
     vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
     component.deleteAccount();
     expect(apiSpy.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it('should show error when me() fails with non-auth error', () => {
+    apiSpy.me.mockReturnValue(throwError(() => new Error('Network error')));
+
+    component.load();
+    fixture.detectChanges();
+
+    expect(component.error()).toBe('Network error');
+  });
+
+  it('should redirect on AUTH_REQUIRED', () => {
+    apiSpy.me.mockReturnValue(throwError(() => new Error('AUTH_REQUIRED')));
+
+    component.load();
+    fixture.detectChanges();
+
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
+  });
+
+  it('should fallback to me info when user details fail', () => {
+    apiSpy.user.mockReturnValue(throwError(() => new Error('User not found')));
+
+    component.load();
+    fixture.detectChanges();
+
+    // Should still set user from me fallback
+    expect(component.user()).toBeTruthy();
+    expect(component.user()?.username).toBe('alice');
+    expect(component.loading()).toBe(false);
+  });
+
+  it('should show user data after load', () => {
+    expect(component.loading()).toBe(false); // loaded already from beforeEach
+    const usernameInput = fixture.nativeElement.querySelector('#username') as HTMLInputElement;
+    expect(usernameInput.value).toBe('alice');
+    const emailInput = fixture.nativeElement.querySelector('#email') as HTMLInputElement;
+    expect(emailInput.value).toBe('alice@example.com');
+  });
+
+  it('should handle deleteAccount error', () => {
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+    apiSpy.deleteUser.mockReturnValue(throwError(() => new Error('Delete failed')));
+
+    component.deleteAccount();
+    fixture.detectChanges();
+
+    expect(component.error()).toBe('Delete failed');
   });
 });

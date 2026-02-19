@@ -56,4 +56,53 @@ describe('PublicListsComponent', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.textContent).toContain('No public lists found');
   });
+
+  it('should navigate to previous page', () => {
+    // Set up multi-page scenario
+    linkServiceMock['getPublishedLists'].mockReturnValue(of({ items: mockLists, page: 1, size: 10, total: 25 }));
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    // page should be 0 initially; set it to 1 to test previous
+    (component as any).page.set(1);
+    (component as any).total.set(25);
+    fixture.detectChanges();
+
+    (component as any).previousPage();
+    expect(component.page()).toBe(0);
+    expect(linkServiceMock['getPublishedLists']).toHaveBeenCalled();
+  });
+
+  it('should not go to previous page when on first page', () => {
+    (component as any).previousPage();
+    // Should not trigger new load since already on page 0
+    expect(component.page()).toBe(0);
+  });
+
+  it('should navigate to next page', () => {
+    linkServiceMock['getPublishedLists'].mockReturnValue(of({ items: mockLists, page: 0, size: 10, total: 25 }));
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    (component as any).nextPage();
+    expect(component.page()).toBe(1);
+  });
+
+  it('should not go to next page when on last page', () => {
+    // total=2, pageSize=10 → only 1 page
+    expect((component as any).isLastPage()).toBe(true);
+    const currentPage = component.page();
+    (component as any).nextPage();
+    expect(component.page()).toBe(currentPage);
+  });
+
+  it('should show pagination controls when multiple pages', () => {
+    linkServiceMock['getPublishedLists'].mockReturnValue(of({ items: mockLists, page: 0, size: 10, total: 25 }));
+    component.ngOnInit();
+    fixture.detectChanges();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('Page 1 of 3');
+    expect(compiled.textContent).toContain('25 total lists');
+  });
 });

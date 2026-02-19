@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { AdminUsersPageComponent } from './admin-users-page.component';
 import { GraphqlApiService, CognitoUserPage } from '../services/graphql-api.service';
 import { Router } from '@angular/router';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { By } from '@angular/platform-browser';
 import { DatePipe } from '@angular/common';
 
@@ -78,5 +78,79 @@ describe('AdminUsersPageComponent', () => {
     deleteBtn.nativeElement.click();
 
     expect(apiSpy.deleteUser).toHaveBeenCalledWith('bob');
+  });
+
+  it('should not delete if confirmation declined', () => {
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
+    
+    fixture.detectChanges();
+    
+    const deleteBtn = fixture.debugElement.query(By.css('.btn-danger'));
+    deleteBtn.nativeElement.click();
+
+    expect(apiSpy.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it('should sort by column and toggle direction', () => {
+    (component as any).sort('email');
+    expect((component as any).sortBy()).toBe('email');
+    expect((component as any).direction()).toBe('asc');
+
+    (component as any).sort('email');
+    expect((component as any).direction()).toBe('desc');
+  });
+
+  it('should show sort indicator for active column', () => {
+    (component as any).sortBy.set('username');
+    (component as any).direction.set('asc');
+    expect((component as any).sortIndicator('username')).toBe('↑');
+    expect((component as any).sortIndicator('email')).toBe('');
+
+    (component as any).direction.set('desc');
+    expect((component as any).sortIndicator('username')).toBe('↓');
+  });
+
+  it('should navigate pages', () => {
+    // With 1 user on page 0, total 1 → last page
+    expect((component as any).isLastPage()).toBe(true);
+    expect((component as any).totalPages()).toBe(1);
+
+    // Set up multi-page scenario
+    apiSpy.users.mockReturnValue(of({
+      ...mockPageData,
+      total: 25
+    }));
+    (component as any).page.set(0);
+    (component as any).load();
+    fixture.detectChanges();
+
+    expect((component as any).totalPages()).toBe(3);
+    expect((component as any).isLastPage()).toBe(false);
+
+    (component as any).nextPage();
+    expect((component as any).page()).toBe(1);
+
+    (component as any).previousPage();
+    expect((component as any).page()).toBe(0);
+  });
+
+  it('should not go to previous page when on first page', () => {
+    (component as any).previousPage();
+    expect((component as any).page()).toBe(0);
+  });
+
+  it('should handle load errors and redirect on AUTH_REQUIRED', () => {
+    vi.useFakeTimers();
+    apiSpy.users.mockReturnValue(throwError(() => new Error('AUTH_REQUIRED')));
+    (component as any).load();
+    // Wait for min overlay time
+    vi.advanceTimersByTime(300);
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/']);
+    vi.useRealTimers();
+  });
+
+  it('should navigate to user detail on row click', () => {
+    (component as any).openUser('bob');
+    expect(routerSpy.navigate).toHaveBeenCalledWith(['/users', 'bob']);
   });
 });

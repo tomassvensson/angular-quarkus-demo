@@ -61,4 +61,23 @@ describe('errorInterceptor', () => {
 
     httpMock.expectOne('/api/test').flush(null, { status: 500, statusText: 'Server Error' });
   });
+
+  it('should skip intercepting log ingestion requests', () => {
+    http.post('/api/v1/logs', [{ level: 'INFO', message: 'test' }]).subscribe((res) => {
+      expect(res).toEqual({ ok: true });
+    });
+
+    httpMock.expectOne('/api/v1/logs').flush({ ok: true });
+  });
+
+  it('should handle network errors (status 0)', () => {
+    http.get('/api/data').subscribe({
+      error: (err: HttpErrorResponse) => {
+        expect(err.status).toBe(0);
+      }
+    });
+
+    const req = httpMock.expectOne('/api/data');
+    req.error(new ProgressEvent('error'));
+  });
 });
