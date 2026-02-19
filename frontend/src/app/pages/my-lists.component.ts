@@ -90,7 +90,8 @@ export class MyListsComponent implements OnInit {
   }
 
   private sanitize(input: string): string {
-    return input.replaceAll(/<[^>]*>?/gm, '').trim();
+    // Remove angle brackets to prevent any HTML-like content; then trim whitespace.
+    return input.replace(/[<>]/g, '').trim();
   }
 
   createList() {
