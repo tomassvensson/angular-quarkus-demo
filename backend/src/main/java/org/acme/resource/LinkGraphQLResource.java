@@ -3,6 +3,7 @@ package org.acme.resource;
 import jakarta.inject.Inject;
 import org.acme.model.Link;
 import org.acme.model.LinkList;
+import org.acme.graphql.model.PublishedListsPage;
 import org.acme.service.LinkService;
 import org.eclipse.microprofile.graphql.*;
 import io.quarkus.security.Authenticated;
@@ -25,8 +26,19 @@ public class LinkGraphQLResource {
     }
 
     @Query("publishedLists")
-    public List<LinkList> getPublishedLists() {
-        return linkService.getPublishedLists();
+    public PublishedListsPage getPublishedLists(
+            @Name("page") @DefaultValue("0") int page,
+            @Name("size") @DefaultValue("10") int size) {
+        int safePage = Math.max(0, page);
+        int safeSize = Math.clamp(size, 1, 100);
+
+        List<LinkList> all = linkService.getPublishedLists();
+        int total = all.size();
+
+        int fromIndex = Math.min(safePage * safeSize, total);
+        int toIndex = Math.min(fromIndex + safeSize, total);
+
+        return new PublishedListsPage(all.subList(fromIndex, toIndex), safePage, safeSize, total);
     }
 
     @Query("myLists")

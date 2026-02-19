@@ -69,7 +69,7 @@ class LinkResourceTest {
                 .body("data.updateList.published", is(true));
 
         // 5. Check Published Lists
-        String publishedQuery = "query { publishedLists { id } }";
+        String publishedQuery = "query { publishedLists { items { id } total } }";
         
         given()
             .contentType(ContentType.JSON)
@@ -77,7 +77,7 @@ class LinkResourceTest {
             .when().post("/api/v1/graphql")
             .then()
                 .statusCode(200)
-                .body("data.publishedLists.id", hasItem(listId));
+                .body("data.publishedLists.items.id", hasItem(listId));
 
         // 6. Delete List
         String deleteQuery = "mutation deleteList($id: String) { deleteList(id: $id) }";
@@ -97,7 +97,7 @@ class LinkResourceTest {
         // Accessing publishedLists without auth should fail (GraphQL error or 401 depending on config)
         // Since we allow public access to /api/v1/graphql, the security check happens at method level
         // and SmallRye GraphQL catches the exception returning 200 with errors.
-        String publishedQuery = "query { publishedLists { id } }";
+        String publishedQuery = "query { publishedLists { items { id } } }";
         
         given()
             .contentType(ContentType.JSON)

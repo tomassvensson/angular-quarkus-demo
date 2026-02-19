@@ -21,3 +21,10 @@ export interface ListDetails {
   list: LinkList;
   links: Link[];
 }
+
+export interface PublishedListsPage {
+  items: LinkList[];
+  page: number;
+  size: number;
+  total: number;
+}

@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 @Component({
   selector: 'app-home-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="panel">
       <div class="hero-card">

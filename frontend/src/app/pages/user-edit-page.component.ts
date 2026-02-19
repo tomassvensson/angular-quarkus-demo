@@ -1,10 +1,11 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { GraphqlApiService } from '../services/graphql-api.service';
 
 @Component({
   selector: 'app-user-edit-page',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, RouterLink],
   template: `
     <section class="panel">

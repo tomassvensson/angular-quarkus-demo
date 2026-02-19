@@ -13,6 +13,8 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
+import org.jboss.logging.Logger;
+
 /**
  * Custom logout endpoint for AWS Cognito.
  * <p>
@@ -25,13 +27,15 @@ import java.nio.charset.StandardCharsets;
 @Path("/logout")
 public class LogoutResource {
 
+    private static final Logger LOG = Logger.getLogger(LogoutResource.class);
+
     private final SecurityIdentity identity;
     private final OidcSession oidcSession;
 
     @ConfigProperty(name = "quarkus.oidc.client-id")
     String clientId;
 
-    @ConfigProperty(name = "cognito.domain", defaultValue = "undefined")
+    @ConfigProperty(name = "cognito.domain", defaultValue = "")
     String cognitoDomain;
 
     @ConfigProperty(name = "auth.provider", defaultValue = "cognito")
@@ -61,12 +65,17 @@ public class LogoutResource {
                          + URLEncoder.encode(normalizedBaseUrl(), StandardCharsets.UTF_8)
                          + "&client_id=" + clientId;
         } else {
-             String logoutUri = URLEncoder.encode(normalizedBaseUrl(), StandardCharsets.UTF_8);
+            if (cognitoDomain == null || cognitoDomain.isBlank()) {
+                LOG.warn("cognito.domain is not configured; redirecting to frontend base URL instead of Cognito logout");
+                logoutUrl = normalizedBaseUrl();
+            } else {
+                String logoutUri = URLEncoder.encode(normalizedBaseUrl(), StandardCharsets.UTF_8);
 
-            // Cognito logout format: https://<domain>/logout?client_id=<id>&logout_uri=<uri>
-            logoutUrl = "https://" + cognitoDomain + "/logout"
-                    + "?client_id=" + clientId
-                    + "&logout_uri=" + logoutUri;
+                // Cognito logout format: https://<domain>/logout?client_id=<id>&logout_uri=<uri>
+                logoutUrl = "https://" + cognitoDomain + "/logout"
+                        + "?client_id=" + clientId
+                        + "&logout_uri=" + logoutUri;
+            }
         }
 
         // Use OidcSession.logout() to properly clear all OIDC session cookies,
