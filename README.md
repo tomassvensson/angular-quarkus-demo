@@ -7,33 +7,104 @@
 [![E2E Tests](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/e2e-tests.yml/badge.svg)](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/e2e-tests.yml)
 
 Full-stack demo application with:
-- Angular frontend (`frontend/`)
-- Quarkus backend (`backend/`)
-- AWS Cognito login/logout and role-based access
-- GraphQL API at `/api/v1/graphql`
+
+- **Angular 21** frontend with SSR (`frontend/`)
+- **Quarkus 3 / Java 21** backend (`backend/`)
+- **AWS Cognito** (or Keycloak) login/logout and role-based access
+- **GraphQL API** at `/api/v1/graphql`
+- **DynamoDB** for link-list persistence
+- **CloudWatch Logs** for centralized log collection
 
 ## Architecture
 
+### System Overview
+
 ```text
-Browser (Angular @ :4200)
-  -> Sign in/out links -> Quarkus OIDC endpoints (:8080)
-  -> GraphQL queries/mutations (with session cookie) -> /api/v1/graphql
-		-> Quarkus GraphQL + Cognito Admin API
-			 -> AWS Cognito User Pool
+┌─────────────────────────────────────────────────────────────────────┐
+│                          Browser                                    │
+│  Angular 21 + Tailwind CSS  (http://localhost:4200)                 │
+│  ┌───────────┬──────────────┬──────────────┬──────────────────────┐ │
+│  │ Home Page │ My Lists     │ Public Lists │ Admin Users (admin)  │ │
+│  │           │ (CRUD links) │ (paginated)  │ (role management)    │ │
+│  └───────────┴──────────────┴──────────────┴──────────────────────┘ │
+│  Services: GraphqlApiService, LinkService, LogCollectorService      │
+│  Interceptors: ErrorInterceptor (401 → redirect)                    │
+└──────────────────────────┬──────────────────────────────────────────┘
+                           │ HTTP (session cookie, withCredentials)
+                           ▼
+┌─────────────────────────────────────────────────────────────────────┐
+│                    Quarkus Backend (:8080)                           │
+│  ┌──────────────┐  ┌──────────────────┐  ┌───────────────────────┐ │
+│  │ OIDC Auth    │  │ GraphQL API      │  │ REST Endpoints        │ │
+│  │ /login       │  │ /api/v1/graphql  │  │ /hello, /user, /home  │ │
+│  │ /logout      │  │ UserGraphQLApi   │  │ /api/v1/logs          │ │
+│  │              │  │ LinkGraphQLRes.  │  │                       │ │
+│  └──────┬───────┘  └───────┬──────────┘  └───────────────────────┘ │
+│         │                  │                                        │
+│  ┌──────▼───────┐  ┌──────▼──────────┐  ┌───────────────────────┐ │
+│  │ Login Policy │  │ Link Service    │  │ CloudWatch Log Svc    │ │
+│  │ (disallow    │  │ (DynamoDB CRUD) │  │ (log ingestion)       │ │
+│  │  usernames)  │  │                 │  │                       │ │
+│  └──────────────┘  └───────┬─────────┘  └───────────┬───────────┘ │
+└─────────────────────────────┼────────────────────────┼──────────────┘
+                              │                        │
+          ┌───────────────────┼────────────────────────┼──────┐
+          │                 AWS Cloud                          │
+          │  ┌──────────────┐ ┌──────────┐ ┌───────────────┐  │
+          │  │ Cognito User │ │ DynamoDB │ │ CloudWatch    │  │
+          │  │ Pool + Admin │ │          │ │ Logs          │  │
+          │  │ API          │ │          │ │               │  │
+          │  └──────────────┘ └──────────┘ └───────────────┘  │
+          └────────────────────────────────────────────────────┘
 ```
 
-### Key behavior
-- Backend owns authentication flow and secrets.
+### Component Summary
+
+| Layer | Component | Purpose |
+| ----- | --------- | ------- |
+| **Frontend** | `HomePageComponent` | Landing page with role-aware content |
+| | `MyListsComponent` | CRUD for user's own link lists |
+| | `ListDetailComponent` | View/manage individual list and its links |
+| | `PublicListsComponent` | Browse published lists (paginated) |
+| | `ProfilePageComponent` | View current user profile |
+| | `AdminUsersPageComponent` | Admin: list/search/edit users (paginated) |
+| | `UserEditPageComponent` | Admin: edit user roles and attributes |
+| | `GraphqlApiService` | Auth/user admin GraphQL client |
+| | `LinkService` | Link-list GraphQL client |
+| | `LogCollectorService` | Batch-sends browser console logs to backend |
+| | `ErrorInterceptor` | HTTP error handler, redirects on 401 |
+| **Backend** | `UserGraphQLApi` | GraphQL: user queries, admin mutations |
+| | `LinkGraphQLResource` | GraphQL: link-list CRUD, publish/unpublish |
+| | `LogIngestionResource` | REST: receives frontend logs → CloudWatch |
+| | `LoginPolicyService` | Blocks disallowed usernames at login |
+| | `LinkService` | DynamoDB CRUD for lists/links |
+| | `CloudWatchLogService` | Writes log entries to CloudWatch Logs |
+| | `CognitoAdminService` | Cognito user pool admin operations |
+| | `DynamoDBConfig` | DynamoDB client configuration |
+
+### Key Behavior
+
+- Backend owns authentication flow and secrets (OIDC session cookies).
 - Frontend uses session-based calls (`withCredentials`) to GraphQL.
-- Role-based menu and admin user management UI.
+- **Auth provider switching**: Cognito in production, Keycloak in dev/test (via Quarkus profiles).
+- Role-based menu visibility and admin user management UI.
 - Login policy blocks disallowed usernames via `app.test.disallowed-usernames`.
+- **Link lists**: Users can create, edit, and delete personal link lists. Lists can be published for public browsing.
+- **Public lists**: Browsable with server-side pagination (configurable page size).
+- **CloudWatch logging**: Frontend console logs are batch-collected and sent to backend, which forwards them to CloudWatch Logs.
+- **Health checks**: Available at `/q/health`, `/q/health/live`, `/q/health/ready` (unauthenticated).
+- **Error handling**: Frontend `ErrorInterceptor` catches HTTP errors; 401s trigger re-authentication redirect.
 
 ## Technologies Used
 
-- **Frontend**: Angular 21, TypeScript, Tailwind CSS, Vitest, Playwright
-- **Backend**: Quarkus 3, Java 21, SmallRye GraphQL, OIDC
-- **AWS**: Cognito User Pool + Cognito Admin API (AWS SDK v2)
-- **Build/Test**: Maven Wrapper, npm
+- **Frontend**: Angular 21, TypeScript, Tailwind CSS, SSR (Angular Universal)
+- **Backend**: Quarkus 3.31, Java 21, SmallRye GraphQL, OIDC (web-app flow)
+- **AWS Services**: Cognito User Pool + Admin API, DynamoDB, CloudWatch Logs
+- **Auth (dev/test)**: Keycloak (via Quarkus Dev Services / Docker Compose)
+- **Local AWS**: LocalStack (DynamoDB + CloudWatch + Cognito for CI)
+- **Testing**: Vitest (unit), Playwright (E2E), JUnit 5 + Testcontainers (backend)
+- **Code Quality**: SonarCloud (frontend + backend), Trivy FS scan, JaCoCo coverage
+- **Build/CI**: Maven Wrapper, npm, GitHub Actions (6 workflows)
 
 ## Product Screenshots
 
@@ -52,18 +123,30 @@ Browser (Angular @ :4200)
 ## Implementation Status
 
 ### ✅ Implemented
-- login/logout redirects handled by backend and returned to Angular
-- versioned GraphQL endpoint at `/api/v1/graphql`
-- role-based menu visibility and admin user listing/editing UI
-- disallowed username login policy via `app.test.disallowed-usernames`
-- long session idle extension configuration (`12H`) and auth-loss redirect behavior
-- frontend build/tests/e2e and backend tests in GitHub Actions
 
-### ⏳ Work in progress / next improvements
-- full hosted-Cognito UI auth e2e in CI (currently excluded as `external-auth`)
-- deeper admin CRUD flows (create/delete users, richer validation)
-- refresh token/session edge-case hardening for multi-tab race conditions
-- production deployment automation (IaC + environment promotion)
+- Login/logout redirects handled by backend and returned to Angular
+- Versioned GraphQL endpoint at `/api/v1/graphql`
+- Role-based menu visibility and admin user listing/editing UI
+- Admin user management: list (paginated), search, edit roles and attributes
+- Disallowed username login policy via `app.test.disallowed-usernames`
+- Long session idle extension configuration (`12H`) and auth-loss redirect behavior
+- **Link Lists**: Create, edit, delete personal link lists with link management
+- **Public Lists**: Browse published lists with server-side pagination
+- **CloudWatch Logging**: Frontend console log collection → backend → CloudWatch Logs
+- **Health Checks**: `/q/health`, `/q/health/live`, `/q/health/ready` (public)
+- **Error Interceptor**: Global HTTP error handling with 401 redirect
+- **Auth Switching**: Cognito (production) ↔ Keycloak (dev/test) via Quarkus profiles
+- **DynamoDB**: Link-list persistence with automatic table creation in dev/test
+- Frontend build/tests/E2E and backend tests in GitHub Actions (6 workflows)
+- SonarCloud analysis for both frontend and backend with coverage reporting
+- Security scanning with Trivy filesystem scan
+
+### ⏳ Work in Progress / Next Improvements
+
+- Full hosted-Cognito UI auth E2E in CI (currently excluded as `external-auth`)
+- Deeper admin CRUD flows (create/delete users, richer validation)
+- Refresh token/session edge-case hardening for multi-tab race conditions
+- Production deployment automation (IaC + environment promotion)
 
 ## External Dependencies
 
@@ -78,8 +161,26 @@ For GitHub Actions CI, AWS cloud access is not required for basic pipeline valid
 ## Repository Structure
 
 ```text
-backend/   Quarkus API + OIDC + GraphQL
-frontend/  Angular UI + Playwright E2E
+├── backend/                    Quarkus API + OIDC + GraphQL
+│   ├── src/main/java/org/acme/
+│   │   ├── config/             DynamoDB client configuration
+│   │   ├── graphql/            GraphQL API + model DTOs
+│   │   ├── model/              Domain entities (Link, LinkList)
+│   │   ├── resource/           GraphQL + REST resources
+│   │   ├── security/           Login policy enforcement
+│   │   └── service/            Business logic (LinkService, CloudWatch, Cognito)
+│   └── src/test/               JUnit 5 + Testcontainers tests
+├── frontend/                   Angular UI + Playwright E2E
+│   ├── src/app/
+│   │   ├── pages/              7 page components (home, lists, admin, profile)
+│   │   ├── services/           GraphQL clients + log collector
+│   │   └── interceptors/       HTTP error interceptor
+│   ├── e2e/                    Playwright E2E tests + fixtures
+│   └── public/                 Static assets
+└── .github/
+    ├── workflows/              6 CI workflows (build, test, E2E, security)
+    ├── keycloak/               Keycloak Docker Compose + realm export
+    └── localstack/             LocalStack Docker Compose + seed script
 ```
 
 ## Configuration
@@ -269,11 +370,12 @@ Note: `act` and GitHub-hosted runners are similar but not identical; always trea
 ## GitHub CI
 
 Workflow files:
-- `.github/workflows/backend-build.yml`
-- `.github/workflows/backend-tests.yml`
-- `.github/workflows/frontend-build.yml`
-- `.github/workflows/frontend-tests.yml`
-- `.github/workflows/e2e-tests.yml`
+- `.github/workflows/backend-build.yml` — Build backend (Maven package)
+- `.github/workflows/backend-tests.yml` — Backend unit + integration tests
+- `.github/workflows/frontend-build.yml` — Build frontend (Angular SSR)
+- `.github/workflows/frontend-tests.yml` — Frontend unit tests (Vitest)
+- `.github/workflows/e2e-tests.yml` — Full E2E tests (Keycloak + backend + Playwright)
+- `.github/workflows/security.yml` — SonarCloud analysis + Trivy vulnerability scan
 
 They run on every push and pull request and provide separate pass/fail badges.
 
@@ -284,6 +386,8 @@ They run on every push and pull request and provide separate pass/fail badges.
 - **Secrets management**:
 	- local/dev: environment variables and LocalStack SSM for test-only values
 	- production: managed secret store (AWS SSM Parameter Store / Secrets Manager), never checked into repo
+- **Static analysis**: SonarCloud runs on every push for both frontend and backend, checking code quality, security hotspots, and code coverage.
+- **Vulnerability scanning**: Trivy filesystem scan runs in CI to detect known CVEs in dependencies.
 
 ## Notes for Production
 
