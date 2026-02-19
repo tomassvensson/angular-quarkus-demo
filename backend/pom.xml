@@ -19,6 +19,7 @@
         <surefire-plugin.version>3.5.4</surefire-plugin.version>
         <sonar.projectKey>tomassvensson_angular-quarkus-demo-backend</sonar.projectKey>
         <sonar.organization>tomassvensson</sonar.organization>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.build.directory}/jacoco-report/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <dependencyManagement>

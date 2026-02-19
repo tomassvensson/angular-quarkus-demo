@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4 # NOSONAR
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4 # NOSONAR
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '20'
           cache: npm
@@ -25,14 +25,14 @@ jobs:
 
       - name: Install dependencies
         working-directory: frontend
-        run: npm ci
+        run: npm ci # NOSONAR(githubactions:S5605) - postinstall scripts required for Angular/esbuild native binaries
 
       - name: Unit tests
         working-directory: frontend
         run: npm test -- --watch=false --coverage
 
       - name: Upload coverage reports to Codecov
-        uses: codecov/codecov-action@v5 # NOSONAR
+        uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5.4.2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: frontend
