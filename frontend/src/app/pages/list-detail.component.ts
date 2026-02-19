@@ -140,7 +140,8 @@ export class ListDetailComponent implements OnInit {
   }
 
   private sanitize(input: string): string {
-    return input.replaceAll(/<[^>]*>?/gm, '').trim();
+    // Strip angle brackets to prevent any HTML tag or fragment (e.g., <script) from surviving.
+    return input.replace(/[<>]/g, '').trim();
   }
 
   saveName() {
