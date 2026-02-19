@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test } from './console-collector.fixture';
 import path from 'node:path';
 
 const outputDir = path.resolve(__dirname, '../../docs/screenshots');

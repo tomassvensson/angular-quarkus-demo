@@ -91,8 +91,14 @@ export class MyListsComponent implements OnInit {
   }
 
   private sanitize(input: string): string {
-    // Strip HTML tags first, then any remaining angle brackets
-    return input.replaceAll(/<[^>]*>/g, '').replaceAll(/[<>]/g, '').trim();
+    // Loop to handle nested/incomplete tags like <<script>script>
+    let result = input;
+    let previous: string;
+    do {
+      previous = result;
+      result = result.replaceAll(/<[^>]*>/g, '');
+    } while (result !== previous);
+    return result.replaceAll(/[<>]/g, '').trim();
   }
 
   createList() {

@@ -12,6 +12,10 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    env:
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_REGION: eu-central-1
     steps:
       - name: Checkout
         uses: actions/checkout@v4 # NOSONAR
@@ -56,7 +60,7 @@ jobs:
 
       - name: Wait for Backend
         run: |
-          timeout 300 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:8080/hello)" != "200" ]]; do sleep 5; done' || false
+          timeout 300 bash -c 'while [[ "$(curl -s -o /dev/null -w ''%{http_code}'' http://localhost:8080/q/health/ready)" != "200" ]]; do sleep 5; done' || false
 
       - name: Install Playwright browser
         working-directory: frontend
@@ -71,12 +75,14 @@ jobs:
         working-directory: backend
         run: |
           if [ -f backend.pid ]; then
-            kill $(cat backend.pid)
+            kill $(cat backend.pid) || true
             # Wait for graceful shutdown and coverage dump
             sleep 10
           fi
-          # Generate report
-          ./mvnw jacoco:report -Djacoco.dataFile=target/jacoco-e2e.exec
+          # Generate report (skip if no exec file)
+          if [ -f target/jacoco-e2e.exec ]; then
+            ./mvnw jacoco:report -Djacoco.dataFile=target/jacoco-e2e.exec
+          fi
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v5 # NOSONAR
@@ -84,3 +90,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           flags: backend-e2e
+
+      - name: Stop Keycloak
+        if: always()
+        run: docker compose -f .github/keycloak/docker-compose.keycloak.yml down -v --remove-orphans

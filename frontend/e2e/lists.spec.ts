@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './console-collector.fixture';
 
 test.describe('Lists and Links E2E', () => {
 
