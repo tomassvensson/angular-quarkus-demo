@@ -95,3 +95,6 @@ Thumbs.db
 **/test_output*.txt
 **/prompts.txt
 .github/copilot-instructions.md
+server.test.pem
+server.test.pem.key
+server.test.pem.crt
