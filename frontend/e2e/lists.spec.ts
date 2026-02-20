@@ -180,14 +180,14 @@ test.describe('Lists and Links E2E', () => {
     await page.getByRole('button', { name: 'Create List' }).click();
 
     // Verify list appears (mock returns id 101, name 'New E2E List')
-    await expect(page.getByRole('link', { name: 'New E2E List' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'New E2E List' })).toBeVisible();
   });
 
   test('should navigate to list details and add a link', async ({ page }) => {
       // Mock returning the new list state after creation isn't persisted in this mock setup unless we track state,
       // so we rely on the specific mocks for specific IDs or generic responses.
       // We'll navigate to the "Existing List" (id 100).
-      await page.getByRole('link', { name: 'Existing List' }).click();
+      await page.getByText('Existing List').click();
       
       await expect(page.getByText('Owner: me')).toBeVisible();
       await expect(page.getByRole('link', { name: 'Example Link' })).toBeVisible();
