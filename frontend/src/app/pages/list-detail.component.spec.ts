@@ -134,4 +134,89 @@ describe('ListDetailComponent', () => {
     component.removeLink(linkToRemove);
     expect(linkServiceMock.updateList).toHaveBeenCalledWith('1', { linkIds: [] });
   });
+
+  it('should vote on a list', () => {
+    const statsResult = { averageRating: 4.5, voteCount: 1, userRating: 5 };
+    socialServiceMock.vote.mockReturnValue(of(statsResult));
+    component.onVoteList(5);
+    expect(socialServiceMock.vote).toHaveBeenCalledWith('LIST', '1', 5);
+    expect(component.listVoteStats()).toEqual(statsResult);
+  });
+
+  it('should handle vote on list error', () => {
+    socialServiceMock.vote.mockReturnValue(throwError(() => new Error('fail')));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    component.onVoteList(3);
+    expect(consoleSpy).toHaveBeenCalled();
+  });
+
+  it('should vote on a link', () => {
+    const statsResult = { averageRating: 3.0, voteCount: 2, userRating: 3 };
+    socialServiceMock.vote.mockReturnValue(of(statsResult));
+    component.onVoteLink('l1', 3);
+    expect(socialServiceMock.vote).toHaveBeenCalledWith('LINK', 'l1', 3);
+    expect(component.linkVoteStats()['l1']).toEqual(statsResult);
+  });
+
+  it('should handle vote on link error', () => {
+    socialServiceMock.vote.mockReturnValue(throwError(() => new Error('fail')));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    component.onVoteLink('l1', 2);
+    expect(consoleSpy).toHaveBeenCalled();
+  });
+
+  it('should handle getMe error', () => {
+    linkServiceMock.getMe.mockReturnValue(throwError(() => new Error('fail')));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    component.ngOnInit();
+    expect(consoleSpy).toHaveBeenCalled();
+  });
+
+  it('should handle loadListVoteStats error', () => {
+    socialServiceMock.getVoteStats.mockReturnValue(throwError(() => new Error('fail')));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    component['loadListVoteStats']('1');
+    expect(consoleSpy).toHaveBeenCalled();
+  });
+
+  it('should handle loadLinkVoteStats error', () => {
+    socialServiceMock.getVoteStats.mockReturnValue(throwError(() => new Error('fail')));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    component['loadLinkVoteStats']('l1');
+    expect(consoleSpy).toHaveBeenCalled();
+  });
+
+  it('should not add link with empty fields', () => {
+    component.newLinkUrl = '';
+    component.newLinkTitle = '';
+    component.addLink();
+    expect(linkServiceMock.addLinkToList).not.toHaveBeenCalled();
+  });
+
+  it('should not save name when list is null', () => {
+    component.list.set(null);
+    component.editNameValue = 'New Name';
+    component.saveName();
+    expect(linkServiceMock.updateList).not.toHaveBeenCalled();
+  });
+
+  it('should not save empty name', () => {
+    component.startEditName(component.list()!);
+    component.editNameValue = '<script>';
+    component.saveName();
+    // After sanitization, string is empty, so updateList should NOT be called
+    expect(linkServiceMock.updateList).not.toHaveBeenCalledWith('1', { name: '' });
+  });
+
+  it('should set isAdmin for admin user', () => {
+    linkServiceMock.getMe.mockReturnValue(of({ username: 'admin', roles: ['admin'] }));
+    component.ngOnInit();
+    expect(component.isAdmin()).toBe(true);
+  });
+
+  it('should not vote on list if list is null', () => {
+    component.list.set(null);
+    component.onVoteList(5);
+    expect(socialServiceMock.vote).not.toHaveBeenCalled();
+  });
 });

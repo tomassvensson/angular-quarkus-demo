@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CommentsSectionComponent } from './comments-section.component';
 import { SocialService } from '../services/social.service';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 describe('CommentsSectionComponent', () => {
@@ -147,5 +147,132 @@ describe('CommentsSectionComponent', () => {
     vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
     component['onDeleteComment'](mockComments[0] as any);
     expect(socialServiceMock.deleteComment).not.toHaveBeenCalled();
+  });
+
+  it('should submit a new comment', () => {
+    const emitSpy = vi.spyOn(component.commentChanged, 'emit');
+    component.newCommentText = 'A new comment';
+    component['submitComment']();
+    expect(socialServiceMock.addComment).toHaveBeenCalledWith('LIST', 'list1', 'A new comment');
+    expect(component.newCommentText).toBe('');
+    expect(emitSpy).toHaveBeenCalled();
+  });
+
+  it('should not submit empty comment', () => {
+    component.newCommentText = '   ';
+    component['submitComment']();
+    expect(socialServiceMock.addComment).not.toHaveBeenCalled();
+  });
+
+  it('should handle submitComment error', () => {
+    socialServiceMock.addComment.mockReturnValue(throwError(() => new Error('fail')));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    component.newCommentText = 'test';
+    component['submitComment']();
+    expect(consoleSpy).toHaveBeenCalled();
+  });
+
+  it('should start reply to a comment', () => {
+    component['startReply']('c1');
+    expect(component.replyingTo()).toBe('c1');
+    expect(component.replyText).toBe('');
+  });
+
+  it('should cancel reply', () => {
+    component['startReply']('c1');
+    component.replyText = 'draft';
+    component['cancelReply']();
+    expect(component.replyingTo()).toBeNull();
+    expect(component.replyText).toBe('');
+  });
+
+  it('should submit a reply', () => {
+    const emitSpy = vi.spyOn(component.commentChanged, 'emit');
+    component['startReply']('c1');
+    component.replyText = 'My reply';
+    component['submitReply']('c1');
+    expect(socialServiceMock.addReply).toHaveBeenCalledWith('c1', 'My reply');
+    expect(component.replyText).toBe('');
+    expect(component.replyingTo()).toBeNull();
+    expect(emitSpy).toHaveBeenCalled();
+  });
+
+  it('should not submit empty reply', () => {
+    component.replyText = '  ';
+    component['submitReply']('c1');
+    expect(socialServiceMock.addReply).not.toHaveBeenCalled();
+  });
+
+  it('should handle submitReply error', () => {
+    socialServiceMock.addReply.mockReturnValue(throwError(() => new Error('fail')));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    component.replyText = 'test reply';
+    component['submitReply']('c1');
+    expect(consoleSpy).toHaveBeenCalled();
+  });
+
+  it('should reload comments after successful delete', () => {
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+    const emitSpy = vi.spyOn(component.commentChanged, 'emit');
+    component['onDeleteComment'](mockComments[0] as any);
+    expect(socialServiceMock.deleteComment).toHaveBeenCalledWith('c1');
+    // After subscribe completes, loadComments should be called again
+    expect(socialServiceMock.getComments).toHaveBeenCalledTimes(2);
+    expect(emitSpy).toHaveBeenCalled();
+  });
+
+  it('should handle onDeleteComment error', () => {
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+    socialServiceMock.deleteComment.mockReturnValue(throwError(() => new Error('fail')));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    component['onDeleteComment'](mockComments[0] as any);
+    expect(consoleSpy).toHaveBeenCalled();
+  });
+
+  it('should handle loadComments error', () => {
+    socialServiceMock.getComments.mockReturnValue(throwError(() => new Error('fail')));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    component['loadComments']();
+    expect(consoleSpy).toHaveBeenCalled();
+  });
+
+  it('should return false for canReply when currentUser is empty', () => {
+    fixture.componentRef.setInput('currentUser', '');
+    fixture.detectChanges();
+    expect(component['canReply'](mockComments[0] as any)).toBe(false);
+  });
+
+  it('should return false for canDelete when currentUser is empty', () => {
+    fixture.componentRef.setInput('currentUser', '');
+    fixture.detectChanges();
+    expect(component['canDelete'](mockComments[0] as any)).toBe(false);
+  });
+
+  it('should show empty state when no comments', () => {
+    socialServiceMock.getComments.mockReturnValue(of([]));
+    component['loadComments']();
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.textContent).toContain('No comments yet');
+  });
+
+  it('should show comment form when user has not commented', () => {
+    fixture.componentRef.setInput('currentUser', 'newUser');
+    socialServiceMock.getComments.mockReturnValue(of([]));
+    component['loadComments']();
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const textarea = compiled.querySelector('textarea');
+    expect(textarea).toBeTruthy();
+  });
+
+  it('should hide comment form when user already commented', () => {
+    // owner1 is currently set as currentUser but hasn't commented. Set to user1 who has.
+    fixture.componentRef.setInput('currentUser', 'user1');
+    fixture.detectChanges();
+    const compiled = fixture.nativeElement as HTMLElement;
+    const textareas = compiled.querySelectorAll('textarea');
+    // Should not show the "add a comment" textarea (only reply form uses textarea)
+    expect(textareas.length).toBe(0);
   });
 });
