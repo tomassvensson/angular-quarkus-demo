@@ -22,6 +22,33 @@ test.describe('Lists and Links E2E', () => {
         });
       }
 
+      // Notification bell: unread count
+      if (body.includes('unreadNotificationCount')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: { unreadNotificationCount: 0 } })
+        });
+      }
+
+      // Vote stats for star ratings
+      if (body.includes('voteStats')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: { voteStats: { averageRating: 0, voteCount: 0, userRating: null } } })
+        });
+      }
+
+      // Comments for comment sections
+      if (body.includes('query') && body.includes('comments')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ data: { comments: [] } })
+        });
+      }
+
       // 2. Get My Lists
       if (body.includes('query getMyLists')) {
         return route.fulfill({
