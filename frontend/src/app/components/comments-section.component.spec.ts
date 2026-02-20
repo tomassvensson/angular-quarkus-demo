@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CommentsSectionComponent } from './comments-section.component';
 import { SocialService } from '../services/social.service';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 describe('CommentsSectionComponent', () => {

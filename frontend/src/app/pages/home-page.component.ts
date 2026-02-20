@@ -146,18 +146,25 @@ export class HomePageComponent implements OnInit {
     if (!isPlatformBrowser(this.platformId)) return;
     this.loading.set(true);
     this.socialService.getReadme().subscribe({
-      next: async (markdown) => {
-        const { marked } = await import('marked');
-        const html = await marked(markdown, { async: true });
-        // Rewrite relative image paths to GitHub raw URLs
-        const processedHtml = html.replace(
-          /src="(?!https?:\/\/)(docs\/[^"]+)"/g,
-          'src="https://raw.githubusercontent.com/tomassvensson/angular-quarkus-demo/main/$1"'
-        );
-        this.readmeHtml.set(this.sanitizer.bypassSecurityTrustHtml(processedHtml));
-        this.loading.set(false);
+      next: (markdown) => {
+        void this.renderMarkdown(markdown);
       },
       error: () => this.loading.set(false)
     });
+  }
+
+  private async renderMarkdown(markdown: string): Promise<void> {
+    try {
+      const { marked } = await import('marked');
+      const html = await marked(markdown, { async: true });
+      // Rewrite relative image paths to GitHub raw URLs
+      const processedHtml = html.replaceAll(
+        /src="(?!https?:\/\/)(docs\/[^"]+)"/g,
+        'src="https://raw.githubusercontent.com/tomassvensson/angular-quarkus-demo/main/$1"'
+      );
+      this.readmeHtml.set(this.sanitizer.bypassSecurityTrustHtml(processedHtml));
+    } finally {
+      this.loading.set(false);
+    }
   }
 }
