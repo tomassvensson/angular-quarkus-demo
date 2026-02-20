@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal, OnInit, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { SocialService } from '../services/social.service';
 
 @Component({
@@ -136,10 +135,9 @@ import { SocialService } from '../services/social.service';
 })
 export class HomePageComponent implements OnInit {
   private readonly socialService = inject(SocialService);
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly platformId = inject(PLATFORM_ID);
 
-  readonly readmeHtml = signal<SafeHtml | null>(null);
+  readonly readmeHtml = signal<string | null>(null);
   readonly loading = signal(false);
 
   ngOnInit() {
@@ -162,8 +160,7 @@ export class HomePageComponent implements OnInit {
         /src="(?!https?:\/\/)(docs\/[^"]+)"/g,
         'src="https://raw.githubusercontent.com/tomassvensson/angular-quarkus-demo/main/$1"'
       );
-      // Safe: content comes from our own README.md served by the backend, parsed by trusted 'marked' library
-      this.readmeHtml.set(this.sanitizer.bypassSecurityTrustHtml(processedHtml)); // NOSONAR typescript:S6268
+      this.readmeHtml.set(processedHtml);
     } finally {
       this.loading.set(false);
     }
