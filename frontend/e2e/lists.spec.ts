@@ -187,7 +187,7 @@ test.describe('Lists and Links E2E', () => {
       // Mock returning the new list state after creation isn't persisted in this mock setup unless we track state,
       // so we rely on the specific mocks for specific IDs or generic responses.
       // We'll navigate to the "Existing List" (id 100).
-      await page.getByText('Existing List').click();
+      await page.getByRole('heading', { name: 'Existing List' }).click();
       
       await expect(page.getByText('Owner: me')).toBeVisible();
       await expect(page.getByRole('link', { name: 'Example Link' })).toBeVisible();
