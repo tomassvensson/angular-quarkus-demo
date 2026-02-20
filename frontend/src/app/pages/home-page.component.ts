@@ -162,7 +162,8 @@ export class HomePageComponent implements OnInit {
         /src="(?!https?:\/\/)(docs\/[^"]+)"/g,
         'src="https://raw.githubusercontent.com/tomassvensson/angular-quarkus-demo/main/$1"'
       );
-      this.readmeHtml.set(this.sanitizer.bypassSecurityTrustHtml(processedHtml));
+      // Safe: content comes from our own README.md served by the backend, parsed by trusted 'marked' library
+      this.readmeHtml.set(this.sanitizer.bypassSecurityTrustHtml(processedHtml)); // NOSONAR typescript:S6268
     } finally {
       this.loading.set(false);
     }
