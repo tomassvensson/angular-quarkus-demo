@@ -70,6 +70,14 @@ jobs:
         working-directory: frontend
         run: npm run e2e
 
+      - name: Upload Playwright results
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-results
+          path: frontend/test-results/
+          retention-days: 7
+
       - name: Stop Backend and Generate Coverage
         if: always()
         working-directory: backend
@@ -79,10 +87,20 @@ jobs:
             # Wait for graceful shutdown and coverage dump
             sleep 10
           fi
-          # Generate report (skip if no exec file)
+          # Generate E2E report (skip if no exec file)
           if [ -f target/jacoco-e2e.exec ]; then
-            ./mvnw jacoco:report -Djacoco.dataFile=target/jacoco-e2e.exec
+            ./mvnw jacoco:report@e2e-report
           fi
+
+      - name: Upload E2E coverage artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: e2e-coverage
+          path: |
+            backend/target/jacoco-e2e.exec
+            backend/target/jacoco-e2e-report/
+          retention-days: 7
 
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@ad3126e916f78f00edff4ed0317cf185271ccc2d # v5.4.2

@@ -25,14 +25,20 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
-    const req = httpMock.expectOne('http://localhost:8080/api/v1/graphql'); // NOSONAR
-    req.flush({
-      data: {
-        me: {
-          username: 'demo@example.com',
-          email: 'demo@example.com',
-          roles: ['RegularUser']
-        }
+    const reqs = httpMock.match('http://localhost:8080/api/v1/graphql'); // NOSONAR
+    reqs.forEach(r => {
+      if (r.request.body?.query?.includes('me')) {
+        r.flush({
+          data: {
+            me: {
+              username: 'demo@example.com',
+              email: 'demo@example.com',
+              roles: ['RegularUser']
+            }
+          }
+        });
+      } else {
+        r.flush({ data: { unreadNotificationCount: 0 } });
       }
     });
 
@@ -44,16 +50,28 @@ describe('App', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
 
-    const req = httpMock.expectOne('http://localhost:8080/api/v1/graphql'); // NOSONAR
-    req.flush({
-      data: {
-        me: {
-          username: 'admin@example.com',
-          email: 'admin@example.com',
-          roles: ['AdminUser']
-        }
+    // Flush initial requests (me query)
+    const reqs = httpMock.match('http://localhost:8080/api/v1/graphql'); // NOSONAR
+    reqs.forEach(r => {
+      if (r.request.body?.query?.includes('me')) {
+        r.flush({
+          data: {
+            me: {
+              username: 'admin@example.com',
+              email: 'admin@example.com',
+              roles: ['AdminUser']
+            }
+          }
+        });
+      } else {
+        r.flush({ data: { unreadNotificationCount: 0 } });
       }
     });
+
+    // After flushing me, isSignedIn becomes true -> notification bell renders and fires request
+    fixture.detectChanges();
+    const bellReqs = httpMock.match('http://localhost:8080/api/v1/graphql'); // NOSONAR
+    bellReqs.forEach(r => r.flush({ data: { unreadNotificationCount: 0 } }));
 
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
