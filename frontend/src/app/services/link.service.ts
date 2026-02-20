@@ -82,9 +82,9 @@ export class LinkService {
     return this.query<{ addLinkToList: LinkList }>(m, { listId, url, title }).pipe(map(d => d.addLinkToList));
   }
 
-  getMe(): Observable<{ username: string }> {
-    const q = `query { me { username } }`;
-    return this.query<{ me: { username: string } }>(q).pipe(map(d => d.me));
+  getMe(): Observable<{ username: string; roles: string[] }> {
+    const q = `query { me { username roles } }`;
+    return this.query<{ me: { username: string; roles: string[] } }>(q).pipe(map(d => d.me));
   }
 }
 

@@ -3,12 +3,15 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, ActivatedRoute, Router } from '@angular/router';
 import { LinkService } from '../services/link.service';
-import { LinkList, Link } from '../models';
+import { SocialService } from '../services/social.service';
+import { LinkList, Link, VoteStats } from '../models';
+import { StarRatingComponent } from '../components/star-rating.component';
+import { CommentsSectionComponent } from '../components/comments-section.component';
 
 @Component({
   selector: 'app-list-detail',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, RouterLink, DatePipe],
+  imports: [CommonModule, FormsModule, RouterLink, DatePipe, StarRatingComponent, CommentsSectionComponent],
   template: `
     <div class="p-4">
       @if (list(); as l) {
@@ -48,6 +51,16 @@ import { LinkList, Link } from '../models';
             Last Edited: {{ l.updatedAt | date:'medium' }} |
             Count: {{ links().length }}
           </div>
+          @if (listVoteStats(); as vs) {
+            <div class="mt-2">
+              <app-star-rating
+                [averageRating]="vs.averageRating"
+                [voteCount]="vs.voteCount"
+                [userRating]="vs.userRating"
+                [interactive]="!!currentUser()"
+                (rated)="onVoteList($event)" />
+            </div>
+          }
         </div>
 
         @if (isOwner(l)) {
@@ -64,13 +77,23 @@ import { LinkList, Link } from '../models';
         <div class="grid gap-2">
           @for (link of links(); track link.id) {
             <div class="border p-3 rounded hover:bg-gray-50 flex justify-between items-center bg-white">
-              <div>
+              <div class="flex-1">
                 <a [href]="link.url" target="_blank" class="text-blue-600 font-medium hover:underline text-lg cursor-pointer">
                   {{ link.title }}
                 </a>
                 <div class="text-xs text-gray-400">
                     {{ link.url }} <span class="mx-1">•</span> Added: {{ link.createdAt | date:'short' }}
                 </div>
+                @if (linkVoteStats()[link.id]; as lvs) {
+                  <div class="mt-1">
+                    <app-star-rating
+                      [averageRating]="lvs.averageRating"
+                      [voteCount]="lvs.voteCount"
+                      [userRating]="lvs.userRating"
+                      [interactive]="!!currentUser()"
+                      (rated)="onVoteLink(link.id, $event)" />
+                  </div>
+                }
               </div>
               @if (isOwner(l)) {
                 <button (click)="removeLink(link)" class="text-red-500 hover:text-red-700 cursor-pointer">
@@ -83,6 +106,13 @@ import { LinkList, Link } from '../models';
           }
         </div>
 
+        <app-comments-section
+          entityType="LIST"
+          [entityId]="l.id"
+          [currentUser]="currentUser()"
+          [entityOwner]="l.owner"
+          [isAdmin]="isAdmin()" />
+
       } @else {
         <p>Loading...</p>
       }
@@ -93,11 +123,15 @@ export class ListDetailComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly linkService = inject(LinkService);
+  private readonly socialService = inject(SocialService);
 
   readonly currentUser = signal<string>('');
+  readonly isAdmin = signal(false);
 
   readonly list = signal<LinkList | null>(null);
   readonly links = signal<Link[]>([]);
+  readonly listVoteStats = signal<VoteStats | null>(null);
+  readonly linkVoteStats = signal<Record<string, VoteStats>>({});
   
   newLinkUrl = '';
   newLinkTitle = '';
@@ -107,7 +141,10 @@ export class ListDetailComponent implements OnInit {
 
   ngOnInit() {
     this.linkService.getMe().subscribe({
-      next: (user) => this.currentUser.set(user.username),
+      next: (user) => {
+        this.currentUser.set(user.username);
+        this.isAdmin.set(user.roles?.includes('admin') || user.roles?.includes('AdminUser') || false);
+      },
       error: (err: Error) => console.error('Failed to get current user:', err.message)
     });
     this.route.paramMap.subscribe(params => {
@@ -121,6 +158,10 @@ export class ListDetailComponent implements OnInit {
         next: (data) => {
             this.list.set(data.list);
             this.links.set(data.links);
+            this.loadListVoteStats(data.list.id);
+            for (const link of data.links) {
+              this.loadLinkVoteStats(link.id);
+            }
         },
         error: () => {
             this.router.navigate(['/my-lists']);
@@ -226,6 +267,36 @@ export class ListDetailComponent implements OnInit {
     this.linkService.updateList(l.id, { linkIds: newIds }).subscribe(updated => {
         this.list.set(updated);
         this.links.update(current => current.filter(x => x.id !== link.id));
+    });
+  }
+
+  onVoteList(rating: number) {
+    const l = this.list();
+    if (!l) return;
+    this.socialService.vote('LIST', l.id, rating).subscribe({
+      next: (stats) => this.listVoteStats.set(stats),
+      error: (err: Error) => console.error('Failed to vote on list:', err.message)
+    });
+  }
+
+  onVoteLink(linkId: string, rating: number) {
+    this.socialService.vote('LINK', linkId, rating).subscribe({
+      next: (stats) => this.linkVoteStats.update(current => ({ ...current, [linkId]: stats })),
+      error: (err: Error) => console.error('Failed to vote on link:', err.message)
+    });
+  }
+
+  private loadListVoteStats(listId: string): void {
+    this.socialService.getVoteStats('LIST', listId).subscribe({
+      next: (stats) => this.listVoteStats.set(stats),
+      error: (err: Error) => console.error('Failed to load list vote stats:', err.message)
+    });
+  }
+
+  private loadLinkVoteStats(linkId: string): void {
+    this.socialService.getVoteStats('LINK', linkId).subscribe({
+      next: (stats) => this.linkVoteStats.update(current => ({ ...current, [linkId]: stats })),
+      error: (err: Error) => console.error('Failed to load link vote stats:', err.message)
     });
   }
 }

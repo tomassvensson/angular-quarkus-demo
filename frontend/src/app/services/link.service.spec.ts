@@ -128,11 +128,12 @@ describe('LinkService', () => {
   it('should get me', () => {
     service.getMe().subscribe((me) => {
       expect(me.username).toBe('alice');
+      expect(me.roles).toEqual(['RegularUser']);
     });
 
     const req = httpMock.expectOne(apiUrl);
     expect(req.request.body.query).toContain('me');
-    req.flush({ data: { me: { username: 'alice' } } });
+    req.flush({ data: { me: { username: 'alice', roles: ['RegularUser'] } } });
   });
 
   it('should throw on GraphQL errors', () => {
