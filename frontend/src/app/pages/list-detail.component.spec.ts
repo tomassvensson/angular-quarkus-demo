@@ -151,7 +151,7 @@ describe('ListDetailComponent', () => {
   });
 
   it('should vote on a link', () => {
-    const statsResult = { averageRating: 3.0, voteCount: 2, userRating: 3 };
+    const statsResult = { averageRating: 3, voteCount: 2, userRating: 3 };
     socialServiceMock.vote.mockReturnValue(of(statsResult));
     component.onVoteLink('l1', 3);
     expect(socialServiceMock.vote).toHaveBeenCalledWith('LINK', 'l1', 3);
