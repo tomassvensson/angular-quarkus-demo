@@ -33,10 +33,8 @@ import { StarRatingComponent } from '../components/star-rating.component';
              (click)="goToList(list.id)">
             <div class="flex justify-between items-start">
               <div>
-                <h2 class="text-xl font-semibold">
-                    <a [routerLink]="['/lists', list.id]" class="text-blue-600 hover:underline" (click)="$event.stopPropagation()">
-                        {{ list.name }}
-                    </a>
+                <h2 class="text-xl font-semibold text-blue-600">
+                    {{ list.name }}
                 </h2>
                 <div class="text-sm text-gray-500">
                   Created: {{ list.createdAt | date:'short' }} |
