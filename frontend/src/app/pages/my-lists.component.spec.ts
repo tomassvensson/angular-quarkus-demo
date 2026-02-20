@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MyListsComponent } from './my-lists.component';
 import { LinkService } from '../services/link.service';
+import { SocialService } from '../services/social.service';
 import { of } from 'rxjs';
 import { ActivatedRoute, provideRouter } from '@angular/router';
 import { DatePipe } from '@angular/common';
@@ -10,11 +11,13 @@ describe('MyListsComponent', () => {
   let component: MyListsComponent;
   let fixture: ComponentFixture<MyListsComponent>;
   let linkServiceMock: any;
+  let socialServiceMock: any;
 
   const mockLists = [
     { id: '1', name: 'List 1', owner: 'me', published: false, createdAt: new Date().toISOString(), linkIds: [] },
     { id: '2', name: 'List 2', owner: 'me', published: true, createdAt: new Date().toISOString(), linkIds: ['l1'] }
   ];
+  const mockVoteStats = { averageRating: 0, voteCount: 0, userRating: null };
 
   beforeEach(async () => {
     linkServiceMock = {
@@ -24,11 +27,16 @@ describe('MyListsComponent', () => {
       deleteList: vi.fn().mockReturnValue(of(void 0))
     };
 
+    socialServiceMock = {
+      getVoteStats: vi.fn().mockReturnValue(of(mockVoteStats))
+    };
+
     await TestBed.configureTestingModule({
       imports: [MyListsComponent],
       providers: [
         provideRouter([]),
         { provide: LinkService, useValue: linkServiceMock },
+        { provide: SocialService, useValue: socialServiceMock },
         { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => null } } } },
         DatePipe
       ]

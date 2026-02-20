@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ListDetailComponent } from './list-detail.component';
 import { LinkService } from '../services/link.service';
+import { SocialService } from '../services/social.service';
 import { of, throwError } from 'rxjs';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { DatePipe } from '@angular/common';
@@ -10,17 +11,28 @@ describe('ListDetailComponent', () => {
   let component: ListDetailComponent;
   let fixture: ComponentFixture<ListDetailComponent>;
   let linkServiceMock: any;
+  let socialServiceMock: any;
   let router: Router;
 
   const mockList = { id: '1', name: 'Test List', owner: 'me', published: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), linkIds: ['l1'] };
   const mockLinks = [{ id: 'l1', owner: 'me', url: 'http://example.com', title: 'Example', createdAt: new Date().toISOString() }];
+  const mockVoteStats = { averageRating: 0, voteCount: 0, userRating: null };
 
   beforeEach(async () => {
     linkServiceMock = {
-        getMe: vi.fn().mockReturnValue(of({ username: 'me' })),
+        getMe: vi.fn().mockReturnValue(of({ username: 'me', roles: ['RegularUser'] })),
         getListDetails: vi.fn().mockReturnValue(of({ list: mockList, links: mockLinks })),
         updateList: vi.fn().mockReturnValue(of({ ...mockList, name: 'Updated Name' })),
         addLinkToList: vi.fn().mockReturnValue(of(mockList))
+    };
+
+    socialServiceMock = {
+        getVoteStats: vi.fn().mockReturnValue(of(mockVoteStats)),
+        vote: vi.fn().mockReturnValue(of(mockVoteStats)),
+        getComments: vi.fn().mockReturnValue(of([])),
+        addComment: vi.fn().mockReturnValue(of({})),
+        addReply: vi.fn().mockReturnValue(of({})),
+        deleteComment: vi.fn().mockReturnValue(of(true))
     };
 
     await TestBed.configureTestingModule({
@@ -28,6 +40,7 @@ describe('ListDetailComponent', () => {
       providers: [
         provideRouter([]),
         { provide: LinkService, useValue: linkServiceMock },
+        { provide: SocialService, useValue: socialServiceMock },
         { 
             provide: ActivatedRoute, 
             useValue: { 

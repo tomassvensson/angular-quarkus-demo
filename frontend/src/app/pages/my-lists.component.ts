@@ -3,12 +3,14 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink, Router } from '@angular/router';
 import { LinkService } from '../services/link.service';
-import { LinkList } from '../models';
+import { SocialService } from '../services/social.service';
+import { LinkList, VoteStats } from '../models';
+import { StarRatingComponent } from '../components/star-rating.component';
 
 @Component({
   selector: 'app-my-lists',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, FormsModule, RouterLink, DatePipe],
+  imports: [CommonModule, FormsModule, RouterLink, DatePipe, StarRatingComponent],
   template: `
     <div class="p-4">
       <h1 class="text-2xl font-bold mb-4">My Lists</h1>
@@ -41,6 +43,15 @@ import { LinkList } from '../models';
                   Published: {{ list.published ? 'Yes' : 'No' }} |
                   Links: {{ list.linkIds.length || 0 }}
                 </div>
+                @if (voteStatsMap()[list.id]; as vs) {
+                  <div class="mt-1">
+                    <app-star-rating
+                      [averageRating]="vs.averageRating"
+                      [voteCount]="vs.voteCount"
+                      [userRating]="vs.userRating"
+                      [interactive]="false" />
+                  </div>
+                }
               </div>
               <div class="flex gap-2" (click)="$event.stopPropagation()">
                 @if (list.published) {
@@ -71,9 +82,11 @@ import { LinkList } from '../models';
 })
 export class MyListsComponent implements OnInit {
   private readonly linkService = inject(LinkService);
+  private readonly socialService = inject(SocialService);
   private readonly router = inject(Router);
   
   readonly lists = signal<LinkList[]>([]);
+  readonly voteStatsMap = signal<Record<string, VoteStats>>({});
   newListName = ''; // Template-driven form
 
   ngOnInit() {
@@ -82,7 +95,15 @@ export class MyListsComponent implements OnInit {
 
   loadLists() {
     this.linkService.getMyLists().subscribe({
-      next: (data) => this.lists.set(data),
+      next: (data) => {
+        this.lists.set(data);
+        for (const list of data) {
+          this.socialService.getVoteStats('LIST', list.id).subscribe({
+            next: (stats) => this.voteStatsMap.update(m => ({ ...m, [list.id]: stats })),
+            error: (err: Error) => console.error('Failed to load vote stats:', err.message)
+          });
+        }
+      },
       error: (err: Error) => console.error('Failed to load lists:', err.message)
     });
   }

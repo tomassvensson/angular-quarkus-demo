@@ -28,3 +28,40 @@ export interface PublishedListsPage {
   size: number;
   total: number;
 }
+
+export interface VoteStats {
+  averageRating: number;
+  voteCount: number;
+  userRating: number | null;
+}
+
+export interface Comment {
+  id: string;
+  entityType: string;
+  entityId: string;
+  userId: string;
+  content: string;
+  parentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  replies: Comment[];
+}
+
+export interface Notification {
+  id: string;
+  userId: string;
+  type: string;
+  entityType: string;
+  entityId: string;
+  actorUsername: string;
+  preview: string;
+  read: boolean;
+  targetId: string;
+  createdAt: string;
+}
+
+export interface NotificationPage {
+  items: Notification[];
+  total: number;
+  unreadCount: number;
+}

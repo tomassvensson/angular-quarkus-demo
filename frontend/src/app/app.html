@@ -10,6 +10,7 @@
         <a routerLink="/public-lists" routerLinkActive="active">Public Lists</a>
         <a routerLink="/my-lists" routerLinkActive="active">My Lists</a>
         <a routerLink="/profile" routerLinkActive="active">Profile</a>
+        <app-notification-bell />
       }
       @if (!isSignedIn()) {
         <a class="menu-action" [href]="signInUrl">Sign in</a>

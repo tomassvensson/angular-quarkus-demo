@@ -6,6 +6,7 @@ import { ProfilePageComponent } from './pages/profile-page.component';
 import { MyListsComponent } from './pages/my-lists.component';
 import { PublicListsComponent } from './pages/public-lists.component';
 import { ListDetailComponent } from './pages/list-detail.component';
+import { NotificationsPageComponent } from './pages/notifications-page.component';
 
 export const routes: Routes = [
 	{ path: '', component: HomePageComponent },
@@ -14,6 +15,7 @@ export const routes: Routes = [
 	{ path: 'users/:username', component: UserEditPageComponent },
     { path: 'my-lists', component: MyListsComponent },
     { path: 'public-lists', component: PublicListsComponent },
-    { path: 'lists/:id', component: ListDetailComponent }
+    { path: 'lists/:id', component: ListDetailComponent },
+    { path: 'notifications', component: NotificationsPageComponent }
 ];
 

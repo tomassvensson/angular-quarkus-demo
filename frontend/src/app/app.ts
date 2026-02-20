@@ -3,11 +3,12 @@ import { isPlatformBrowser } from '@angular/common';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { CurrentUser, GraphqlApiService } from './services/graphql-api.service';
 import { LogCollectorService } from './services/log-collector.service';
+import { NotificationBellComponent } from './components/notification-bell.component';
 
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationBellComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
