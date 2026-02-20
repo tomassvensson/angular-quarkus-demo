@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PublicListsComponent } from './public-lists.component';
 import { LinkService } from '../services/link.service';
+import { SocialService } from '../services/social.service';
 import { of } from 'rxjs';
 import { provideRouter } from '@angular/router';
 
@@ -8,6 +9,7 @@ describe('PublicListsComponent', () => {
   let component: PublicListsComponent;
   let fixture: ComponentFixture<PublicListsComponent>;
   let linkServiceMock: Record<string, ReturnType<typeof vi.fn>>;
+  let socialServiceMock: Record<string, ReturnType<typeof vi.fn>>;
 
   const mockLists = [
     { id: '1', name: 'Public List 1', owner: 'alice', published: true, createdAt: new Date().toISOString(), linkIds: ['l1'] },
@@ -15,17 +17,23 @@ describe('PublicListsComponent', () => {
   ];
 
   const mockPage = { items: mockLists, page: 0, size: 10, total: 2 };
+  const mockVoteStats = { averageRating: 0, voteCount: 0, userRating: null };
 
   beforeEach(async () => {
     linkServiceMock = {
       getPublishedLists: vi.fn().mockReturnValue(of(mockPage))
     };
 
+    socialServiceMock = {
+      getVoteStats: vi.fn().mockReturnValue(of(mockVoteStats))
+    };
+
     await TestBed.configureTestingModule({
       imports: [PublicListsComponent],
       providers: [
         provideRouter([]),
-        { provide: LinkService, useValue: linkServiceMock }
+        { provide: LinkService, useValue: linkServiceMock },
+        { provide: SocialService, useValue: socialServiceMock }
       ]
     }).compileComponents();
 

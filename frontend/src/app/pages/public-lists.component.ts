@@ -2,12 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit } 
 import { CommonModule, DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { LinkService } from '../services/link.service';
-import { LinkList } from '../models';
+import { SocialService } from '../services/social.service';
+import { LinkList, VoteStats } from '../models';
+import { StarRatingComponent } from '../components/star-rating.component';
 
 @Component({
   selector: 'app-public-lists',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, RouterLink, DatePipe],
+  imports: [CommonModule, RouterLink, DatePipe, StarRatingComponent],
   template: `
     <div class="p-4">
       <h1 class="text-2xl font-bold mb-4">Public Lists</h1>
@@ -25,6 +27,15 @@ import { LinkList } from '../models';
               Created: {{ list.createdAt | date:'short' }} |
               Links: {{ list.linkIds.length || 0 }}
             </div>
+            @if (voteStatsMap()[list.id]; as vs) {
+              <div class="mt-1">
+                <app-star-rating
+                  [averageRating]="vs.averageRating"
+                  [voteCount]="vs.voteCount"
+                  [userRating]="vs.userRating"
+                  [interactive]="false" />
+              </div>
+            }
           </div>
         } @empty {
           <p class="text-gray-500">No public lists found.</p>
@@ -61,10 +72,12 @@ import { LinkList } from '../models';
 })
 export class PublicListsComponent implements OnInit {
   private readonly linkService = inject(LinkService);
+  private readonly socialService = inject(SocialService);
 
   readonly lists = signal<LinkList[]>([]);
   readonly page = signal(0);
   readonly total = signal(0);
+  readonly voteStatsMap = signal<Record<string, VoteStats>>({});
   private readonly pageSize = 10;
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.total() / this.pageSize)));
@@ -95,6 +108,12 @@ export class PublicListsComponent implements OnInit {
     this.linkService.getPublishedLists(this.page(), this.pageSize).subscribe(data => {
       this.lists.set(data.items);
       this.total.set(data.total);
+      for (const list of data.items) {
+        this.socialService.getVoteStats('LIST', list.id).subscribe({
+          next: (stats) => this.voteStatsMap.update(m => ({ ...m, [list.id]: stats })),
+          error: (err: Error) => console.error('Failed to load vote stats:', err.message)
+        });
+      }
     });
   }
 }
