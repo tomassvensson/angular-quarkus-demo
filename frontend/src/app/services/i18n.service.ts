@@ -56,6 +56,33 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'profile.confirmPassword': 'Confirm Password', // NOSONAR typescript:S2068
     'profile.passwordMismatch': 'Passwords do not match.', // NOSONAR typescript:S2068
     'profile.passwordChanged': 'Password changed successfully.', // NOSONAR typescript:S2068
+    'profile.passwordChangeFailed': 'Failed to change password: {error}', // NOSONAR typescript:S2068
+    'profile.passwordRequired': 'All password fields are required.', // NOSONAR typescript:S2068
+
+    // MFA
+    'mfa.title': 'Multi-Factor Authentication',
+    'mfa.trustedDevices': 'Trusted Devices',
+    'mfa.noDevices': 'No trusted devices found.',
+    'mfa.removeDevice': 'Remove',
+    'mfa.removeDeviceConfirm': 'Remove device "{name}"?',
+    'mfa.deviceRemoved': 'Device removed successfully.',
+    'mfa.setupTotp': 'Setup Authenticator App',
+    'mfa.totpInstructions': 'Scan the QR code below with your authenticator app, or enter the secret key manually.',
+    'mfa.secretKey': 'Secret Key',
+    'mfa.enterCode': 'Enter verification code',
+    'mfa.verify': 'Verify',
+    'mfa.verified': 'Authenticator verified successfully!',
+    'mfa.verifyFailed': 'Verification failed: {error}',
+    'mfa.preferences': 'MFA Preferences',
+    'mfa.enableTotp': 'Enable Authenticator App (TOTP)',
+    'mfa.enableSms': 'Enable SMS',
+    'mfa.preferredMethod': 'Preferred Method',
+    'mfa.savePreferences': 'Save Preferences',
+    'mfa.preferencesSaved': 'MFA preferences updated.',
+    'mfa.preferencesFailed': 'Failed to update MFA preferences: {error}',
+    'mfa.none': 'None',
+    'mfa.totp': 'TOTP',
+    'mfa.sms': 'SMS',
 
     // My Lists
     'myLists.title': 'My Lists',
@@ -214,6 +241,33 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'profile.confirmPassword': 'Passwort bestätigen', // NOSONAR typescript:S2068
     'profile.passwordMismatch': 'Passwörter stimmen nicht überein.', // NOSONAR typescript:S2068
     'profile.passwordChanged': 'Passwort erfolgreich geändert.', // NOSONAR typescript:S2068
+    'profile.passwordChangeFailed': 'Passwort konnte nicht geändert werden: {error}', // NOSONAR typescript:S2068
+    'profile.passwordRequired': 'Alle Passwortfelder sind erforderlich.', // NOSONAR typescript:S2068
+
+    // MFA
+    'mfa.title': 'Multi-Faktor-Authentifizierung',
+    'mfa.trustedDevices': 'Vertrauenswürdige Geräte',
+    'mfa.noDevices': 'Keine vertrauenswürdigen Geräte gefunden.',
+    'mfa.removeDevice': 'Entfernen',
+    'mfa.removeDeviceConfirm': 'Gerät "{name}" entfernen?',
+    'mfa.deviceRemoved': 'Gerät erfolgreich entfernt.',
+    'mfa.setupTotp': 'Authentifizierungs-App einrichten',
+    'mfa.totpInstructions': 'Scannen Sie den QR-Code mit Ihrer Authentifizierungs-App oder geben Sie den Geheimschlüssel manuell ein.',
+    'mfa.secretKey': 'Geheimschlüssel',
+    'mfa.enterCode': 'Bestätigungscode eingeben',
+    'mfa.verify': 'Bestätigen',
+    'mfa.verified': 'Authentifizierung erfolgreich bestätigt!',
+    'mfa.verifyFailed': 'Bestätigung fehlgeschlagen: {error}',
+    'mfa.preferences': 'MFA-Einstellungen',
+    'mfa.enableTotp': 'Authentifizierungs-App (TOTP) aktivieren',
+    'mfa.enableSms': 'SMS aktivieren',
+    'mfa.preferredMethod': 'Bevorzugte Methode',
+    'mfa.savePreferences': 'Einstellungen speichern',
+    'mfa.preferencesSaved': 'MFA-Einstellungen aktualisiert.',
+    'mfa.preferencesFailed': 'MFA-Einstellungen konnten nicht aktualisiert werden: {error}',
+    'mfa.none': 'Keine',
+    'mfa.totp': 'TOTP',
+    'mfa.sms': 'SMS',
 
     // My Lists
     'myLists.title': 'Meine Listen',
@@ -372,6 +426,33 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'profile.confirmPassword': 'Bekräfta lösenord', // NOSONAR typescript:S2068
     'profile.passwordMismatch': 'Lösenorden matchar inte.', // NOSONAR typescript:S2068
     'profile.passwordChanged': 'Lösenordet har ändrats.', // NOSONAR typescript:S2068
+    'profile.passwordChangeFailed': 'Kunde inte ändra lösenord: {error}', // NOSONAR typescript:S2068
+    'profile.passwordRequired': 'Alla lösenordsfält krävs.', // NOSONAR typescript:S2068
+
+    // MFA
+    'mfa.title': 'Flerfaktorsautentisering',
+    'mfa.trustedDevices': 'Betrodda enheter',
+    'mfa.noDevices': 'Inga betrodda enheter hittades.',
+    'mfa.removeDevice': 'Ta bort',
+    'mfa.removeDeviceConfirm': 'Ta bort enhet "{name}"?',
+    'mfa.deviceRemoved': 'Enhet borttagen.',
+    'mfa.setupTotp': 'Konfigurera autentiseringsapp',
+    'mfa.totpInstructions': 'Skanna QR-koden med din autentiseringsapp eller ange den hemliga nyckeln manuellt.',
+    'mfa.secretKey': 'Hemlig nyckel',
+    'mfa.enterCode': 'Ange verifieringskod',
+    'mfa.verify': 'Verifiera',
+    'mfa.verified': 'Autentisering verifierad!',
+    'mfa.verifyFailed': 'Verifiering misslyckades: {error}',
+    'mfa.preferences': 'MFA-inställningar',
+    'mfa.enableTotp': 'Aktivera autentiseringsapp (TOTP)',
+    'mfa.enableSms': 'Aktivera SMS',
+    'mfa.preferredMethod': 'Föredragen metod',
+    'mfa.savePreferences': 'Spara inställningar',
+    'mfa.preferencesSaved': 'MFA-inställningar uppdaterade.',
+    'mfa.preferencesFailed': 'Kunde inte uppdatera MFA-inställningar: {error}',
+    'mfa.none': 'Ingen',
+    'mfa.totp': 'TOTP',
+    'mfa.sms': 'SMS',
 
     // My Lists
     'myLists.title': 'Mina listor',

@@ -4,9 +4,13 @@ import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.annotation.security.RolesAllowed;
 import jakarta.inject.Inject;
+import org.acme.graphql.model.ChangePasswordInput;
 import org.acme.graphql.model.CognitoUserPage;
 import org.acme.graphql.model.CognitoUserView;
 import org.acme.graphql.model.CurrentUserView;
+import org.acme.graphql.model.MfaPreferenceInput;
+import org.acme.graphql.model.MfaSetupResponse;
+import org.acme.graphql.model.TrustedDevice;
 import org.acme.graphql.model.UpdateUserInput;
 import org.acme.service.CognitoAdminService;
 import org.eclipse.microprofile.graphql.DefaultValue;
@@ -90,9 +94,62 @@ public class UserGraphQLApi {
         return cognitoAdminService.deleteUser(username);
     }
 
+    @Mutation("changePassword")
+    @Authenticated
+    public boolean changePassword(ChangePasswordInput input) {
+        if (input == null) {
+            throw new IllegalArgumentException("Input is required");
+        }
+        String username = identity.getPrincipal().getName();
+        cognitoAdminService.changePassword(username, input.getCurrentPassword(), input.getNewPassword());
+        return true;
+    }
+
     @Query("groups")
     @RolesAllowed({ADMIN_ROLE, AWS_ADMIN_ROLE})
     public List<String> groups() {
         return List.of("RegularUser", ADMIN_ROLE, "OwnerUser", "NoPermissionsTestUser");
+    }
+
+    // ---- MFA Management ----
+
+    @Query("trustedDevices")
+    @Authenticated
+    public List<TrustedDevice> trustedDevices() {
+        String username = identity.getPrincipal().getName();
+        return cognitoAdminService.listTrustedDevices(username);
+    }
+
+    @Mutation("forgetDevice")
+    @Authenticated
+    public boolean forgetDevice(String deviceKey) {
+        String username = identity.getPrincipal().getName();
+        cognitoAdminService.forgetDevice(username, deviceKey);
+        return true;
+    }
+
+    @Mutation("setMfaPreference")
+    @Authenticated
+    public boolean setMfaPreference(MfaPreferenceInput input) {
+        if (input == null) {
+            throw new IllegalArgumentException("Input is required");
+        }
+        String username = identity.getPrincipal().getName();
+        cognitoAdminService.setMfaPreference(username, input.isTotpEnabled(), input.isSmsEnabled(), input.getPreferredMethod());
+        return true;
+    }
+
+    @Mutation("setupTotp")
+    @Authenticated
+    public MfaSetupResponse setupTotp() {
+        String username = identity.getPrincipal().getName();
+        return cognitoAdminService.setupTotp(username);
+    }
+
+    @Mutation("verifyTotp")
+    @Authenticated
+    public boolean verifyTotp(String code) {
+        String username = identity.getPrincipal().getName();
+        return cognitoAdminService.verifyTotp(username, code);
     }
 }

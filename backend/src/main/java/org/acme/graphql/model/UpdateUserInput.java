@@ -1,7 +1,10 @@
 package org.acme.graphql.model;
 
+import org.eclipse.microprofile.graphql.Input;
+
 import java.util.List;
 
+@Input("UpdateUserInput")
 public class UpdateUserInput {
     private String username;
     private String email;

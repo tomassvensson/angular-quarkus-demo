@@ -47,10 +47,14 @@ describe('HomePageComponent', () => {
     const fixture = TestBed.createComponent(HomePageComponent);
     fixture.detectChanges();
     
-    // Wait an extra tick for the async import + render
+    // Wait for the async dynamic import of 'marked' and rendering
     await fixture.whenStable();
-    await new Promise(resolve => setTimeout(resolve, 100));
-    fixture.detectChanges();
+    // The dynamic import + async marked() needs extra time in test environments
+    for (let i = 0; i < 20; i++) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+      fixture.detectChanges();
+      if (fixture.nativeElement.querySelector('.markdown-body')) break;
+    }
     
     const compiled = fixture.nativeElement as HTMLElement;
     const markdownBody = compiled.querySelector('.markdown-body');
