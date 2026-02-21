@@ -247,6 +247,58 @@ class SocialGraphQLResourceTest {
                 .body("data.comments[0].replies", hasSize(3));
     }
 
+    // --- Edit comment tests ---
+
+    @Test
+    @Order(27)
+    @TestSecurity(user = "commenter1", roles = {"RegularUser"})
+    void testAuthorCanEditComment() {
+        String mutation = "mutation EditComment($commentId: String!, $content: String!) { editComment(commentId: $commentId, content: $content) { id userId content } }";
+        String vars = String.format("{\"commentId\": \"%s\", \"content\": \"Edited: Great list!\"}", testCommentId);
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(graphqlBody(mutation, vars))
+            .when().post("/api/v1/graphql")
+            .then()
+                .statusCode(200)
+                .body("data.editComment.id", is(testCommentId))
+                .body("data.editComment.userId", is("commenter1"))
+                .body("data.editComment.content", is("Edited: Great list!"));
+    }
+
+    @Test
+    @Order(28)
+    @TestSecurity(user = "randomUser", roles = {"RegularUser"})
+    void testNonAuthorCannotEditComment() {
+        String mutation = "mutation EditComment($commentId: String!, $content: String!) { editComment(commentId: $commentId, content: $content) { id } }";
+        String vars = String.format("{\"commentId\": \"%s\", \"content\": \"Should not work\"}", testCommentId);
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(graphqlBody(mutation, vars))
+            .when().post("/api/v1/graphql")
+            .then()
+                .statusCode(200)
+                .body("errors", not(empty()));
+    }
+
+    @Test
+    @Order(29)
+    @TestSecurity(user = "commenter1", roles = {"RegularUser"})
+    void testEditNonExistentCommentFails() {
+        String mutation = "mutation EditComment($commentId: String!, $content: String!) { editComment(commentId: $commentId, content: $content) { id } }";
+        String vars = "{\"commentId\": \"nonexistent-id\", \"content\": \"Should fail\"}";
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(graphqlBody(mutation, vars))
+            .when().post("/api/v1/graphql")
+            .then()
+                .statusCode(200)
+                .body("errors", not(empty()));
+    }
+
     // --- Notification tests ---
 
     @Test

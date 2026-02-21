@@ -50,12 +50,12 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'profile.deleteConfirm': 'Are you sure you want to delete your account ({email})? This action cannot be undone.',
     'profile.deleted': 'Account deleted.',
     'profile.loading': 'Loading...',
-    'profile.changePassword': 'Change Password',
-    'profile.currentPassword': 'Current Password',
-    'profile.newPassword': 'New Password',
-    'profile.confirmPassword': 'Confirm Password',
-    'profile.passwordMismatch': 'Passwords do not match.',
-    'profile.passwordChanged': 'Password changed successfully.',
+    'profile.changePassword': 'Change Password', // NOSONAR typescript:S2068 - i18n translation key, not a credential
+    'profile.currentPassword': 'Current Password', // NOSONAR typescript:S2068
+    'profile.newPassword': 'New Password', // NOSONAR typescript:S2068
+    'profile.confirmPassword': 'Confirm Password', // NOSONAR typescript:S2068
+    'profile.passwordMismatch': 'Passwords do not match.', // NOSONAR typescript:S2068
+    'profile.passwordChanged': 'Password changed successfully.', // NOSONAR typescript:S2068
 
     // My Lists
     'myLists.title': 'My Lists',
@@ -208,12 +208,12 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'profile.deleteConfirm': 'Sind Sie sicher, dass Sie Ihr Konto ({email}) löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.',
     'profile.deleted': 'Konto gelöscht.',
     'profile.loading': 'Wird geladen...',
-    'profile.changePassword': 'Passwort ändern',
-    'profile.currentPassword': 'Aktuelles Passwort',
-    'profile.newPassword': 'Neues Passwort',
-    'profile.confirmPassword': 'Passwort bestätigen',
-    'profile.passwordMismatch': 'Passwörter stimmen nicht überein.',
-    'profile.passwordChanged': 'Passwort erfolgreich geändert.',
+    'profile.changePassword': 'Passwort ändern', // NOSONAR typescript:S2068
+    'profile.currentPassword': 'Aktuelles Passwort', // NOSONAR typescript:S2068
+    'profile.newPassword': 'Neues Passwort', // NOSONAR typescript:S2068
+    'profile.confirmPassword': 'Passwort bestätigen', // NOSONAR typescript:S2068
+    'profile.passwordMismatch': 'Passwörter stimmen nicht überein.', // NOSONAR typescript:S2068
+    'profile.passwordChanged': 'Passwort erfolgreich geändert.', // NOSONAR typescript:S2068
 
     // My Lists
     'myLists.title': 'Meine Listen',
@@ -366,12 +366,12 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'profile.deleteConfirm': 'Är du säker på att du vill radera ditt konto ({email})? Denna åtgärd kan inte ångras.',
     'profile.deleted': 'Konto raderat.',
     'profile.loading': 'Laddar...',
-    'profile.changePassword': 'Ändra lösenord',
-    'profile.currentPassword': 'Nuvarande lösenord',
-    'profile.newPassword': 'Nytt lösenord',
-    'profile.confirmPassword': 'Bekräfta lösenord',
-    'profile.passwordMismatch': 'Lösenorden matchar inte.',
-    'profile.passwordChanged': 'Lösenordet har ändrats.',
+    'profile.changePassword': 'Ändra lösenord', // NOSONAR typescript:S2068
+    'profile.currentPassword': 'Nuvarande lösenord', // NOSONAR typescript:S2068
+    'profile.newPassword': 'Nytt lösenord', // NOSONAR typescript:S2068
+    'profile.confirmPassword': 'Bekräfta lösenord', // NOSONAR typescript:S2068
+    'profile.passwordMismatch': 'Lösenorden matchar inte.', // NOSONAR typescript:S2068
+    'profile.passwordChanged': 'Lösenordet har ändrats.', // NOSONAR typescript:S2068
 
     // My Lists
     'myLists.title': 'Mina listor',
