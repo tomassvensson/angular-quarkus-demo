@@ -1,13 +1,21 @@
 package org.acme.service;
 
+import org.acme.graphql.model.CognitoUserPage;
 import org.acme.graphql.model.MfaSetupResponse;
 import org.acme.graphql.model.TrustedDevice;
+import org.acme.graphql.model.UpdateUserInput;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminAddUserToGroupResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDisableUserRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDisableUserResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminEnableUserRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminEnableUserResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminForgetDeviceRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminForgetDeviceResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserRequest;
@@ -18,16 +26,23 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListDe
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListDevicesResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminListGroupsForUserResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRemoveUserFromGroupRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminRemoveUserFromGroupResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminSetUserMfaPreferenceRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminSetUserMfaPreferenceResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminSetUserPasswordRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminSetUserPasswordResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminUpdateUserAttributesRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminUpdateUserAttributesResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AssociateSoftwareTokenRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AssociateSoftwareTokenResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.DeviceType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.GroupType;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.NotAuthorizedException;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.UserType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftwareTokenRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftwareTokenResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftwareTokenResponseType;
@@ -467,5 +482,379 @@ class CognitoAdminServiceTest {
 
         boolean result = service.deleteUser("user");
         assertTrue(result);
+    }
+
+    // ---- listUsers (Cognito path) ----
+
+    @Test
+    void testListUsersPaginationAndSort() {
+        // Set up 3 users returned from Cognito
+        UserType user1 = UserType.builder().username("alice").build();
+        UserType user2 = UserType.builder().username("bob").build();
+        UserType user3 = UserType.builder().username("charlie").build();
+
+        ListUsersResponse listResp = ListUsersResponse.builder()
+                .users(user1, user2, user3)
+                .build();
+        when(mockClient.listUsers(any(ListUsersRequest.class))).thenReturn(listResp);
+
+        // adminGetUser for each user
+        for (String name : List.of("alice", "bob", "charlie")) {
+            AdminGetUserResponse getUserResp = AdminGetUserResponse.builder()
+                    .username(name)
+                    .enabled(true)
+                    .userStatus("CONFIRMED")
+                    .userAttributes(
+                            AttributeType.builder().name("email").value(name + "@test.com").build(),
+                            AttributeType.builder().name("email_verified").value("true").build())
+                    .userCreateDate(Instant.now())
+                    .userLastModifiedDate(Instant.now())
+                    .build();
+            when(mockClient.adminGetUser(AdminGetUserRequest.builder()
+                    .userPoolId("us-east-1_TestPool")
+                    .username(name)
+                    .build())).thenReturn(getUserResp);
+        }
+
+        AdminListGroupsForUserResponse groupsResp = AdminListGroupsForUserResponse.builder()
+                .groups(GroupType.builder().groupName("RegularUser").build())
+                .build();
+        when(mockClient.adminListGroupsForUser(any(AdminListGroupsForUserRequest.class))).thenReturn(groupsResp);
+
+        // Page 0, size 2 -> should get first 2 users (sorted by username asc)
+        CognitoUserPage page = service.listUsers(0, 2, "username", "asc");
+        assertEquals(2, page.getItems().size());
+        assertEquals(3, page.getTotal());
+        assertEquals(0, page.getPage());
+        assertEquals(2, page.getSize());
+        assertEquals("alice", page.getItems().get(0).getUsername());
+        assertEquals("bob", page.getItems().get(1).getUsername());
+    }
+
+    @Test
+    void testListUsersDescending() {
+        UserType user1 = UserType.builder().username("alice").build();
+        UserType user2 = UserType.builder().username("bob").build();
+
+        ListUsersResponse listResp = ListUsersResponse.builder()
+                .users(user1, user2)
+                .build();
+        when(mockClient.listUsers(any(ListUsersRequest.class))).thenReturn(listResp);
+
+        for (String name : List.of("alice", "bob")) {
+            AdminGetUserResponse getUserResp = AdminGetUserResponse.builder()
+                    .username(name)
+                    .enabled(true)
+                    .userStatus("CONFIRMED")
+                    .userAttributes(
+                            AttributeType.builder().name("email").value(name + "@test.com").build())
+                    .userCreateDate(Instant.now())
+                    .userLastModifiedDate(Instant.now())
+                    .build();
+            when(mockClient.adminGetUser(AdminGetUserRequest.builder()
+                    .userPoolId("us-east-1_TestPool")
+                    .username(name)
+                    .build())).thenReturn(getUserResp);
+        }
+
+        AdminListGroupsForUserResponse groupsResp = AdminListGroupsForUserResponse.builder()
+                .groups(List.of())
+                .build();
+        when(mockClient.adminListGroupsForUser(any(AdminListGroupsForUserRequest.class))).thenReturn(groupsResp);
+
+        CognitoUserPage page = service.listUsers(0, 10, "username", "desc");
+        assertEquals(2, page.getItems().size());
+        assertEquals("bob", page.getItems().get(0).getUsername());
+        assertEquals("alice", page.getItems().get(1).getUsername());
+    }
+
+    @Test
+    void testListUsersSortByEmail() {
+        UserType user1 = UserType.builder().username("alice").build();
+        UserType user2 = UserType.builder().username("bob").build();
+
+        ListUsersResponse listResp = ListUsersResponse.builder()
+                .users(user1, user2)
+                .build();
+        when(mockClient.listUsers(any(ListUsersRequest.class))).thenReturn(listResp);
+
+        AdminGetUserResponse aliceResp = AdminGetUserResponse.builder()
+                .username("alice")
+                .enabled(true)
+                .userStatus("CONFIRMED")
+                .userAttributes(AttributeType.builder().name("email").value("z_alice@test.com").build())
+                .userCreateDate(Instant.now())
+                .userLastModifiedDate(Instant.now())
+                .build();
+        AdminGetUserResponse bobResp = AdminGetUserResponse.builder()
+                .username("bob")
+                .enabled(true)
+                .userStatus("CONFIRMED")
+                .userAttributes(AttributeType.builder().name("email").value("a_bob@test.com").build())
+                .userCreateDate(Instant.now())
+                .userLastModifiedDate(Instant.now())
+                .build();
+
+        when(mockClient.adminGetUser(AdminGetUserRequest.builder()
+                .userPoolId("us-east-1_TestPool")
+                .username("alice")
+                .build())).thenReturn(aliceResp);
+        when(mockClient.adminGetUser(AdminGetUserRequest.builder()
+                .userPoolId("us-east-1_TestPool")
+                .username("bob")
+                .build())).thenReturn(bobResp);
+
+        AdminListGroupsForUserResponse groupsResp = AdminListGroupsForUserResponse.builder()
+                .groups(List.of())
+                .build();
+        when(mockClient.adminListGroupsForUser(any(AdminListGroupsForUserRequest.class))).thenReturn(groupsResp);
+
+        // Sort by email ascending: "a_bob" < "z_alice"
+        CognitoUserPage page = service.listUsers(0, 10, "email", "asc");
+        assertEquals("bob", page.getItems().get(0).getUsername());
+        assertEquals("alice", page.getItems().get(1).getUsername());
+    }
+
+    @Test
+    void testListUsersPageBeyondEnd() {
+        ListUsersResponse listResp = ListUsersResponse.builder()
+                .users(UserType.builder().username("alice").build())
+                .build();
+        when(mockClient.listUsers(any(ListUsersRequest.class))).thenReturn(listResp);
+
+        AdminGetUserResponse getUserResp = AdminGetUserResponse.builder()
+                .username("alice")
+                .enabled(true)
+                .userStatus("CONFIRMED")
+                .userAttributes(AttributeType.builder().name("email").value("alice@test.com").build())
+                .userCreateDate(Instant.now())
+                .userLastModifiedDate(Instant.now())
+                .build();
+        when(mockClient.adminGetUser(any(AdminGetUserRequest.class))).thenReturn(getUserResp);
+
+        AdminListGroupsForUserResponse groupsResp = AdminListGroupsForUserResponse.builder()
+                .groups(List.of())
+                .build();
+        when(mockClient.adminListGroupsForUser(any(AdminListGroupsForUserRequest.class))).thenReturn(groupsResp);
+
+        // Page 5, size 10 -> beyond the single user -> empty items
+        CognitoUserPage page = service.listUsers(5, 10, "username", "asc");
+        assertTrue(page.getItems().isEmpty());
+        assertEquals(1, page.getTotal());
+    }
+
+    @Test
+    void testListUsersNegativePageClamps() {
+        ListUsersResponse listResp = ListUsersResponse.builder()
+                .users(UserType.builder().username("alice").build())
+                .build();
+        when(mockClient.listUsers(any(ListUsersRequest.class))).thenReturn(listResp);
+
+        AdminGetUserResponse getUserResp = AdminGetUserResponse.builder()
+                .username("alice")
+                .enabled(true)
+                .userStatus("CONFIRMED")
+                .userAttributes(AttributeType.builder().name("email").value("alice@test.com").build())
+                .userCreateDate(Instant.now())
+                .userLastModifiedDate(Instant.now())
+                .build();
+        when(mockClient.adminGetUser(any(AdminGetUserRequest.class))).thenReturn(getUserResp);
+
+        AdminListGroupsForUserResponse groupsResp = AdminListGroupsForUserResponse.builder()
+                .groups(List.of())
+                .build();
+        when(mockClient.adminListGroupsForUser(any(AdminListGroupsForUserRequest.class))).thenReturn(groupsResp);
+
+        // Negative page -> clamped to 0
+        CognitoUserPage page = service.listUsers(-1, 10, "username", "asc");
+        assertEquals(0, page.getPage());
+        assertEquals(1, page.getItems().size());
+    }
+
+    // ---- updateUser (Cognito path) ----
+
+    @Test
+    void testUpdateUserEmailAndEnable() {
+        UpdateUserInput input = new UpdateUserInput();
+        input.setUsername("alice");
+        input.setEmail("new@test.com");
+        input.setEnabled(true);
+        input.setGroups(List.of("AdminUser"));
+
+        // Mock update email
+        when(mockClient.adminUpdateUserAttributes(any(AdminUpdateUserAttributesRequest.class)))
+                .thenReturn(AdminUpdateUserAttributesResponse.builder().build());
+        // Mock enable
+        when(mockClient.adminEnableUser(any(AdminEnableUserRequest.class)))
+                .thenReturn(AdminEnableUserResponse.builder().build());
+        // Mock remove old group
+        when(mockClient.adminRemoveUserFromGroup(any(AdminRemoveUserFromGroupRequest.class)))
+                .thenReturn(AdminRemoveUserFromGroupResponse.builder().build());
+        // Mock add new group
+        when(mockClient.adminAddUserToGroup(any(AdminAddUserToGroupRequest.class)))
+                .thenReturn(AdminAddUserToGroupResponse.builder().build());
+
+        // Current groups for syncGroups
+        AdminListGroupsForUserResponse currentGroupsResp = AdminListGroupsForUserResponse.builder()
+                .groups(GroupType.builder().groupName("RegularUser").build())
+                .build();
+        when(mockClient.adminListGroupsForUser(any(AdminListGroupsForUserRequest.class))).thenReturn(currentGroupsResp);
+
+        // Updated user for return
+        AdminGetUserResponse updatedUserResp = AdminGetUserResponse.builder()
+                .username("alice")
+                .enabled(true)
+                .userStatus("CONFIRMED")
+                .userAttributes(
+                        AttributeType.builder().name("email").value("new@test.com").build(),
+                        AttributeType.builder().name("email_verified").value("true").build())
+                .userCreateDate(Instant.now())
+                .userLastModifiedDate(Instant.now())
+                .build();
+        when(mockClient.adminGetUser(any(AdminGetUserRequest.class))).thenReturn(updatedUserResp);
+
+        var result = service.updateUser(input);
+
+        assertEquals("alice", result.getUsername());
+        assertEquals("new@test.com", result.getEmail());
+        assertTrue(result.isEnabled());
+
+        verify(mockClient).adminUpdateUserAttributes(any(AdminUpdateUserAttributesRequest.class));
+        verify(mockClient).adminEnableUser(any(AdminEnableUserRequest.class));
+        verify(mockClient).adminRemoveUserFromGroup(any(AdminRemoveUserFromGroupRequest.class));
+        verify(mockClient).adminAddUserToGroup(any(AdminAddUserToGroupRequest.class));
+    }
+
+    @Test
+    void testUpdateUserDisable() {
+        UpdateUserInput input = new UpdateUserInput();
+        input.setUsername("alice");
+        input.setEnabled(false);
+
+        when(mockClient.adminDisableUser(any(AdminDisableUserRequest.class)))
+                .thenReturn(AdminDisableUserResponse.builder().build());
+
+        AdminListGroupsForUserResponse groupsResp = AdminListGroupsForUserResponse.builder()
+                .groups(List.of())
+                .build();
+        when(mockClient.adminListGroupsForUser(any(AdminListGroupsForUserRequest.class))).thenReturn(groupsResp);
+
+        AdminGetUserResponse updatedUserResp = AdminGetUserResponse.builder()
+                .username("alice")
+                .enabled(false)
+                .userStatus("CONFIRMED")
+                .userAttributes(
+                        AttributeType.builder().name("email").value("alice@test.com").build())
+                .userCreateDate(Instant.now())
+                .userLastModifiedDate(Instant.now())
+                .build();
+        when(mockClient.adminGetUser(any(AdminGetUserRequest.class))).thenReturn(updatedUserResp);
+
+        var result = service.updateUser(input);
+
+        assertFalse(result.isEnabled());
+        verify(mockClient).adminDisableUser(any(AdminDisableUserRequest.class));
+    }
+
+    @Test
+    void testUpdateUserNullInput() {
+        assertThrows(IllegalArgumentException.class, () -> service.updateUser(null));
+    }
+
+    @Test
+    void testUpdateUserBlankUsername() {
+        UpdateUserInput input = new UpdateUserInput();
+        input.setUsername("  ");
+        assertThrows(IllegalArgumentException.class, () -> service.updateUser(input));
+    }
+
+    @Test
+    void testUpdateUserNoEmailChange() {
+        UpdateUserInput input = new UpdateUserInput();
+        input.setUsername("alice");
+        // email is null -> should NOT call adminUpdateUserAttributes
+
+        AdminListGroupsForUserResponse groupsResp = AdminListGroupsForUserResponse.builder()
+                .groups(List.of())
+                .build();
+        when(mockClient.adminListGroupsForUser(any(AdminListGroupsForUserRequest.class))).thenReturn(groupsResp);
+
+        AdminGetUserResponse updatedUserResp = AdminGetUserResponse.builder()
+                .username("alice")
+                .enabled(true)
+                .userStatus("CONFIRMED")
+                .userAttributes(
+                        AttributeType.builder().name("email").value("alice@test.com").build())
+                .userCreateDate(Instant.now())
+                .userLastModifiedDate(Instant.now())
+                .build();
+        when(mockClient.adminGetUser(any(AdminGetUserRequest.class))).thenReturn(updatedUserResp);
+
+        var result = service.updateUser(input);
+        assertEquals("alice", result.getUsername());
+    }
+
+    @Test
+    void testUpdateUserSyncGroupsNullDesired() {
+        UpdateUserInput input = new UpdateUserInput();
+        input.setUsername("alice");
+        input.setGroups(null); // null groups -> no group sync
+
+        AdminListGroupsForUserResponse groupsResp = AdminListGroupsForUserResponse.builder()
+                .groups(GroupType.builder().groupName("RegularUser").build())
+                .build();
+        when(mockClient.adminListGroupsForUser(any(AdminListGroupsForUserRequest.class))).thenReturn(groupsResp);
+
+        AdminGetUserResponse updatedUserResp = AdminGetUserResponse.builder()
+                .username("alice")
+                .enabled(true)
+                .userStatus("CONFIRMED")
+                .userAttributes(
+                        AttributeType.builder().name("email").value("alice@test.com").build())
+                .userCreateDate(Instant.now())
+                .userLastModifiedDate(Instant.now())
+                .build();
+        when(mockClient.adminGetUser(any(AdminGetUserRequest.class))).thenReturn(updatedUserResp);
+
+        var result = service.updateUser(input);
+        assertNotNull(result);
+    }
+
+    // ---- comparatorFor various sort fields ----
+
+    @Test
+    void testListUsersSortByStatus() {
+        UserType user1 = UserType.builder().username("alice").build();
+
+        ListUsersResponse listResp = ListUsersResponse.builder()
+                .users(user1)
+                .build();
+        when(mockClient.listUsers(any(ListUsersRequest.class))).thenReturn(listResp);
+
+        AdminGetUserResponse getUserResp = AdminGetUserResponse.builder()
+                .username("alice")
+                .enabled(true)
+                .userStatus("CONFIRMED")
+                .userAttributes(AttributeType.builder().name("email").value("alice@test.com").build())
+                .userCreateDate(Instant.now())
+                .userLastModifiedDate(Instant.now())
+                .build();
+        when(mockClient.adminGetUser(any(AdminGetUserRequest.class))).thenReturn(getUserResp);
+
+        AdminListGroupsForUserResponse groupsResp = AdminListGroupsForUserResponse.builder()
+                .groups(List.of())
+                .build();
+        when(mockClient.adminListGroupsForUser(any(AdminListGroupsForUserRequest.class))).thenReturn(groupsResp);
+
+        // Test various sort fields execute without error
+        assertDoesNotThrow(() -> service.listUsers(0, 10, "status", "asc"));
+        assertDoesNotThrow(() -> service.listUsers(0, 10, "confirmationstatus", "asc"));
+        assertDoesNotThrow(() -> service.listUsers(0, 10, "emailverified", "asc"));
+        assertDoesNotThrow(() -> service.listUsers(0, 10, "created", "asc"));
+        assertDoesNotThrow(() -> service.listUsers(0, 10, "lastupdatedtime", "asc"));
+        assertDoesNotThrow(() -> service.listUsers(0, 10, "modified", "asc"));
+        assertDoesNotThrow(() -> service.listUsers(0, 10, "mfasetting", "asc"));
+        assertDoesNotThrow(() -> service.listUsers(0, 10, "enabled", "asc"));
+        assertDoesNotThrow(() -> service.listUsers(0, 10, null, "asc")); // default to username
     }
 }
