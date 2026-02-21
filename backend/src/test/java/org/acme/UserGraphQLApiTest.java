@@ -187,7 +187,9 @@ class UserGraphQLApiTest {
                 .then()
                 .statusCode(200)
                 .body("data.users.page", is(0))
-                .body("data.users.size", is(10));
+                .body("data.users.size", is(10))
+                .body("data.users.total", greaterThanOrEqualTo(1))
+                .body("data.users.items", notNullValue());
     }
 
     @Test
@@ -277,9 +279,6 @@ class UserGraphQLApiTest {
     @Test
     @TestSecurity(user = "admin", roles = {"AdminUser"})
     void testUpdateUserAsAdmin() {
-        // updateUser goes directly to Cognito (no keycloak mock path),
-        // so we only verify the mutation is accepted and the GraphQL layer invokes it.
-        // In test mode the Cognito call will fail with a user-not-found error.
         String mutation = "{\"query\": \"mutation UpdateUser($input: UpdateUserInput!) { updateUser(input: $input) { username email enabled } }\", " +
                 "\"variables\": {\"input\": {\"username\": \"admin\", \"email\": \"admin-new@example.com\", \"enabled\": true}}}";
 
@@ -288,9 +287,8 @@ class UserGraphQLApiTest {
                 .body(mutation)
                 .when().post("/api/v1/graphql")
                 .then()
-                .statusCode(200);
-        // GraphQL returns 200 even on errors; the mutation reaches the service layer,
-        // which is tested in isolation in CognitoAdminServiceTest.
+                .statusCode(200)
+                .body("data.updateUser.username", is("admin"));
     }
 
     @Test
