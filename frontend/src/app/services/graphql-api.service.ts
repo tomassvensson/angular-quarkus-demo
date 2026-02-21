@@ -29,6 +29,19 @@ export interface CognitoUserPage {
   total: number;
 }
 
+export interface TrustedDevice {
+  deviceKey: string;
+  deviceName: string;
+  lastAuthenticatedDate: string;
+  createdDate: string;
+  lastModifiedDate: string;
+}
+
+export interface MfaSetupResponse {
+  secretCode: string;
+  qrCodeUri: string;
+}
+
 interface GraphqlResponse<T> {
   data?: T;
   errors?: Array<{ message: string }>;
@@ -122,6 +135,40 @@ export class GraphqlApiService {
   deleteUser(username: string): Observable<boolean> {
     const query = `mutation DeleteUser($username: String!) { deleteUser(username: $username) }`;
     return this.execute<{ deleteUser: boolean }>(query, { username }).pipe(map((result) => result.deleteUser));
+  }
+
+  changePassword(currentPassword: string, newPassword: string): Observable<boolean> {
+    const query = `mutation ChangePassword($input: ChangePasswordInput!) { changePassword(input: $input) }`;
+    return this.execute<{ changePassword: boolean }>(query, { input: { currentPassword, newPassword } }).pipe(
+      map((result) => result.changePassword)
+    );
+  }
+
+  trustedDevices(): Observable<TrustedDevice[]> {
+    const query = `query { trustedDevices { deviceKey deviceName lastAuthenticatedDate createdDate lastModifiedDate } }`;
+    return this.execute<{ trustedDevices: TrustedDevice[] }>(query).pipe(map((result) => result.trustedDevices));
+  }
+
+  forgetDevice(deviceKey: string): Observable<boolean> {
+    const query = `mutation ForgetDevice($deviceKey: String!) { forgetDevice(deviceKey: $deviceKey) }`;
+    return this.execute<{ forgetDevice: boolean }>(query, { deviceKey }).pipe(map((result) => result.forgetDevice));
+  }
+
+  setMfaPreference(totpEnabled: boolean, smsEnabled: boolean, preferredMethod: string): Observable<boolean> {
+    const query = `mutation SetMfa($input: MfaPreferenceInput!) { setMfaPreference(input: $input) }`;
+    return this.execute<{ setMfaPreference: boolean }>(query, { input: { totpEnabled, smsEnabled, preferredMethod } }).pipe(
+      map((result) => result.setMfaPreference)
+    );
+  }
+
+  setupTotp(): Observable<MfaSetupResponse> {
+    const query = `mutation { setupTotp { secretCode qrCodeUri } }`;
+    return this.execute<{ setupTotp: MfaSetupResponse }>(query).pipe(map((result) => result.setupTotp));
+  }
+
+  verifyTotp(code: string): Observable<boolean> {
+    const query = `mutation VerifyTotp($code: String!) { verifyTotp(code: $code) }`;
+    return this.execute<{ verifyTotp: boolean }>(query, { code }).pipe(map((result) => result.verifyTotp));
   }
 
   private execute<T>(query: string, variables?: Record<string, unknown>): Observable<T> {
