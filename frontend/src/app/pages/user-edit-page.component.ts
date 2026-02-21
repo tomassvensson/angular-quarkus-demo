@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { GraphqlApiService } from '../services/graphql-api.service';
+import { I18nService } from '../services/i18n.service';
 
 @Component({
   selector: 'app-user-edit-page',
@@ -9,37 +10,37 @@ import { GraphqlApiService } from '../services/graphql-api.service';
   imports: [FormsModule, RouterLink],
   template: `
     <section class="panel">
-      <h2>Edit User</h2>
+      <h2>{{ i18n.t('userEdit.title') }}</h2>
 
       @if (error()) {
         <p class="error">{{ error() }}</p>
       }
 
       @if (saved()) {
-        <p>Saved successfully.</p>
+        <p>{{ i18n.t('userEdit.saved') }}</p>
       }
 
       @if (loading()) {
-        <p class="muted">Loading...</p>
+        <p class="muted">{{ i18n.t('common.loading') }}</p>
       } @else {
         <form class="form-grid" (ngSubmit)="save()">
           <div class="detail-card">
-            <label for="username">Username</label>
+            <label for="username">{{ i18n.t('admin.username') }}</label>
             <input id="username" [value]="username()" disabled />
           </div>
 
           <div class="detail-card">
-            <label for="email">Email</label>
+            <label for="email">{{ i18n.t('admin.email') }}</label>
             <input id="email" [(ngModel)]="email" name="email" />
           </div>
 
           <div class="row detail-card">
             <input id="enabled" type="checkbox" [(ngModel)]="enabled" name="enabled" />
-            <label for="enabled">Enabled</label>
+            <label for="enabled">{{ i18n.t('admin.enabled') }}</label>
           </div>
 
           <div class="detail-card">
-            <label>Group membership</label>
+            <label>{{ i18n.t('admin.groupMembership') }}</label>
             <div class="group-grid">
               @for (group of availableGroups(); track group) {
                 <label class="group-pill">
@@ -55,8 +56,8 @@ import { GraphqlApiService } from '../services/graphql-api.service';
           </div>
 
           <div class="row">
-            <button class="btn" type="submit">Save</button>
-            <a class="btn" routerLink="/users">Back to Users</a>
+            <button class="btn" type="submit">{{ i18n.t('userEdit.save') }}</button>
+            <a class="btn" routerLink="/users">{{ i18n.t('userEdit.backToUsers') }}</a>
           </div>
         </form>
       }
@@ -66,6 +67,7 @@ import { GraphqlApiService } from '../services/graphql-api.service';
 export class UserEditPageComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly api = inject(GraphqlApiService);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly username = signal('');
   protected readonly loading = signal(true);

@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { I18nService } from '../services/i18n.service';
 
 @Component({
   selector: 'app-star-rating',
@@ -25,7 +26,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
       @if (showStats()) {
         <span class="vote-stats">
           <span class="avg-number">{{ displayAverage() }}</span>
-          <span class="vote-count">({{ voteCount() }} vote{{ voteCount() === 1 ? '' : 's' }})</span>
+          <span class="vote-count">({{ voteCount() }} {{ voteCount() === 1 ? i18n.t('rating.vote') : i18n.t('rating.votes') }})</span>
         </span>
       }
     </div>
@@ -60,7 +61,7 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
       display: inline-block;
     }
     .star-bg {
-      color: #d1d5db;
+      color: var(--color-input-border);
     }
     .star-fg {
       position: absolute;
@@ -72,13 +73,13 @@ import { ChangeDetectionStrategy, Component, computed, input, output } from '@an
     }
     .vote-stats {
       font-size: 0.85rem;
-      color: #4b5563;
+      color: var(--color-text-muted);
     }
     .avg-number {
       font-weight: 600;
     }
     .vote-count {
-      color: #6b7280;
+      color: var(--color-text-muted);
     }
   `]
 })
@@ -89,6 +90,7 @@ export class StarRatingComponent {
   readonly interactive = input(false);
   readonly showStats = input(true);
   readonly rated = output<number>();
+  protected readonly i18n = inject(I18nService);
 
   readonly stars = [1, 2, 3, 4, 5];
   protected hoverRating = 0;

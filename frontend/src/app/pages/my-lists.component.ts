@@ -6,6 +6,7 @@ import { LinkService } from '../services/link.service';
 import { SocialService } from '../services/social.service';
 import { LinkList, VoteStats } from '../models';
 import { StarRatingComponent } from '../components/star-rating.component';
+import { I18nService } from '../services/i18n.service';
 
 @Component({
   selector: 'app-my-lists',
@@ -13,33 +14,34 @@ import { StarRatingComponent } from '../components/star-rating.component';
   imports: [CommonModule, FormsModule, RouterLink, DatePipe, StarRatingComponent],
   template: `
     <div class="p-4">
-      <h1 class="text-2xl font-bold mb-4">My Lists</h1>
+      <h1 class="text-2xl font-bold mb-4">{{ i18n.t('myLists.title') }}</h1>
       
       <div class="mb-6 flex gap-2">
         <input 
           [(ngModel)]="newListName" 
-          placeholder="New List Name" 
+          [placeholder]="i18n.t('myLists.newListPlaceholder')" 
           class="border p-2 rounded"
           (keyup.enter)="createList()"
         />
         <button (click)="createList()" class="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer">
-          Create List
+          {{ i18n.t('myLists.createList') }}
         </button>
       </div>
 
       <div class="grid gap-4">
         @for (list of lists(); track list.id) {
-          <div class="border p-4 rounded shadow bg-white hover:bg-gray-50 cursor-pointer transition-colors"
+          <div class="border p-4 rounded shadow cursor-pointer transition-colors"
+             [style.background]="'var(--color-card-bg)'"
              (click)="goToList(list.id)">
             <div class="flex justify-between items-start">
               <div>
-                <h2 class="text-xl font-semibold text-blue-600">
+                <h2 class="text-xl font-semibold" style="color: var(--color-link)">
                     {{ list.name }}
                 </h2>
-                <div class="text-sm text-gray-500">
-                  Created: {{ list.createdAt | date:'short' }} |
-                  Published: {{ list.published ? 'Yes' : 'No' }} |
-                  Links: {{ list.linkIds.length || 0 }}
+                <div class="text-sm" style="color: var(--color-text-muted)">
+                  {{ i18n.t('myLists.created') }}: {{ list.createdAt | date:'short' }} |
+                  {{ i18n.t('myLists.published') }}: {{ list.published ? i18n.t('common.yes') : i18n.t('common.no') }} |
+                  {{ i18n.t('myLists.links') }}: {{ list.linkIds.length || 0 }}
                 </div>
                 @if (voteStatsMap()[list.id]; as vs) {
                   <div class="mt-1">
@@ -54,26 +56,26 @@ import { StarRatingComponent } from '../components/star-rating.component';
               <div class="flex gap-2" (click)="$event.stopPropagation()">
                 @if (list.published) {
                   <button (click)="togglePublish(list)" class="bg-yellow-500 text-white px-2 py-1 rounded text-sm cursor-pointer hover:bg-yellow-600">
-                    Unpublish
+                    {{ i18n.t('myLists.unpublish') }}
                   </button>
                 } @else {
                   <button (click)="togglePublish(list)" class="bg-green-500 text-white px-2 py-1 rounded text-sm cursor-pointer hover:bg-green-600">
-                    Publish
+                    {{ i18n.t('myLists.publish') }}
                   </button>
                 }
                 <button (click)="deleteList(list)" class="bg-red-500 text-white px-2 py-1 rounded text-sm cursor-pointer hover:bg-red-600">
-                  Delete
+                  {{ i18n.t('myLists.delete') }}
                 </button>
               </div>
             </div>
           </div>
         } @empty {
-          <p class="text-gray-500">No lists found. Create one above.</p>
+          <p style="color: var(--color-text-muted)">{{ i18n.t('myLists.noLists') }}</p>
         }
       </div>
       
        <div class="mt-8">
-        <a routerLink="/public-lists" class="text-blue-600 underline">View Public Lists</a>
+        <a routerLink="/public-lists" class="text-blue-600 underline">{{ i18n.t('myLists.viewPublic') }}</a>
       </div>
     </div>
   `
@@ -82,6 +84,7 @@ export class MyListsComponent implements OnInit {
   private readonly linkService = inject(LinkService);
   private readonly socialService = inject(SocialService);
   private readonly router = inject(Router);
+  protected readonly i18n = inject(I18nService);
   
   readonly lists = signal<LinkList[]>([]);
   readonly voteStatsMap = signal<Record<string, VoteStats>>({});
@@ -138,7 +141,8 @@ export class MyListsComponent implements OnInit {
 
   togglePublish(list: LinkList) {
     const action = list.published ? 'unpublish' : 'publish';
-    const conf = globalThis.confirm(`Are you sure you want to ${action} the list "${list.name}"?`);
+    const confirmKey = list.published ? 'myLists.confirmUnpublish' : 'myLists.confirmPublish';
+    const conf = globalThis.confirm(this.i18n.t(confirmKey, { name: list.name }));
     if (!conf) return;
 
     this.linkService.updateList(list.id, { published: !list.published }).subscribe(updated => {
@@ -147,7 +151,7 @@ export class MyListsComponent implements OnInit {
   }
 
   deleteList(list: LinkList) {
-    const conf = globalThis.confirm(`Are you sure you want to delete the list "${list.name}"?`);
+    const conf = globalThis.confirm(this.i18n.t('myLists.confirmDelete', { name: list.name }));
     if (!conf) return;
 
     this.linkService.deleteList(list.id).subscribe(() => {

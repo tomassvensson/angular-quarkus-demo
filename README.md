@@ -1,26 +1,30 @@
 # Angular + Quarkus + AWS Cognito Demo
 
-**Frontend:**
+**Technologies:**
 ![Angular](https://img.shields.io/badge/Angular-21-DD0031?logo=angular&logoColor=white)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.x-06B6D4?logo=tailwindcss&logoColor=white)
+![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
+![Quarkus](https://img.shields.io/badge/Quarkus-3.31-4695EB?logo=quarkus&logoColor=white)
+![DynamoDB](https://img.shields.io/badge/DynamoDB-4053D6?logo=amazondynamodb&logoColor=white)
+![AWS Cognito](https://img.shields.io/badge/Cognito-DD344C?logo=amazonaws&logoColor=white)
+![GraphQL](https://img.shields.io/badge/GraphQL-E10098?logo=graphql&logoColor=white)
 
+**Frontend:**
 [![Frontend Build](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/frontend-build.yml/badge.svg)](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/frontend-build.yml)
 [![Frontend Tests](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/frontend-tests.yml/badge.svg)](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/frontend-tests.yml)
-[![Quality Gate (Frontend)](https://sonarcloud.io/api/project_badges/measure?project=tomassvensson_angular-quarkus-demo-frontend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=tomassvensson_angular-quarkus-demo-frontend)
+[![SonarQube Quality Gate (Frontend)](https://sonarcloud.io/api/project_badges/measure?project=tomassvensson_angular-quarkus-demo-frontend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=tomassvensson_angular-quarkus-demo-frontend)
 [![Coverage (Frontend)](https://sonarcloud.io/api/project_badges/measure?project=tomassvensson_angular-quarkus-demo-frontend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=tomassvensson_angular-quarkus-demo-frontend)
 
 **Backend:**
-![Java](https://img.shields.io/badge/Java-21-ED8B00?logo=openjdk&logoColor=white)
-![Quarkus](https://img.shields.io/badge/Quarkus-3.31-4695EB?logo=quarkus&logoColor=white)
-
 [![Backend Build](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/backend-build.yml/badge.svg)](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/backend-build.yml)
 [![Backend Tests](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/backend-tests.yml)
-[![Quality Gate (Backend)](https://sonarcloud.io/api/project_badges/measure?project=tomassvensson_angular-quarkus-demo-backend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=tomassvensson_angular-quarkus-demo-backend)
+[![SonarQube Quality Gate (Backend)](https://sonarcloud.io/api/project_badges/measure?project=tomassvensson_angular-quarkus-demo-backend&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=tomassvensson_angular-quarkus-demo-backend)
 [![Coverage (Backend)](https://sonarcloud.io/api/project_badges/measure?project=tomassvensson_angular-quarkus-demo-backend&metric=coverage)](https://sonarcloud.io/summary/new_code?id=tomassvensson_angular-quarkus-demo-backend)
 
-**Integration & Coverage:**
+**Integration & Security:**
 [![E2E Tests](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/e2e-tests.yml/badge.svg)](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/e2e-tests.yml)
+[![Security Scans](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/security.yml/badge.svg)](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/security.yml)
 [![Codecov](https://codecov.io/gh/tomassvensson/angular-quarkus-demo/branch/main/graph/badge.svg)](https://codecov.io/gh/tomassvensson/angular-quarkus-demo)
 
 Full-stack demo application with:

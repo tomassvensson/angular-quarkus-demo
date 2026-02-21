@@ -80,6 +80,13 @@ public class SocialGraphQLResource {
         return commentService.deleteComment(commentId, userId, roles);
     }
 
+    @Mutation("editComment")
+    public Comment editComment(@Name("commentId") String commentId,
+                                @Name("content") String content) {
+        String userId = identity.getPrincipal().getName();
+        return commentService.editComment(commentId, userId, content);
+    }
+
     // ========== Notifications ==========
 
     @Query("notifications")

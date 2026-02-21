@@ -5,6 +5,7 @@ import { LinkService } from '../services/link.service';
 import { SocialService } from '../services/social.service';
 import { LinkList, VoteStats } from '../models';
 import { StarRatingComponent } from '../components/star-rating.component';
+import { I18nService } from '../services/i18n.service';
 
 @Component({
   selector: 'app-public-lists',
@@ -12,20 +13,20 @@ import { StarRatingComponent } from '../components/star-rating.component';
   imports: [CommonModule, RouterLink, DatePipe, StarRatingComponent],
   template: `
     <div class="p-4">
-      <h1 class="text-2xl font-bold mb-4">Public Lists</h1>
+      <h1 class="text-2xl font-bold mb-4">{{ i18n.t('publicLists.title') }}</h1>
       
       <div class="grid gap-4">
         @for (list of lists(); track list.id) {
-          <div class="border p-4 rounded shadow bg-white">
+          <div class="border p-4 rounded shadow" [style.background]="'var(--color-card-bg)'">
              <h2 class="text-xl font-semibold">
-                <a [routerLink]="['/lists', list.id]" class="text-blue-600 hover:underline">
+                <a [routerLink]="['/lists', list.id]" class="hover:underline" style="color: var(--color-link)">
                     {{ list.name }}
                 </a>
             </h2>
-            <div class="text-sm text-gray-500">
-              Owner: {{ list.owner }} | 
-              Created: {{ list.createdAt | date:'short' }} |
-              Links: {{ list.linkIds.length || 0 }}
+            <div class="text-sm" style="color: var(--color-text-muted)">
+              {{ i18n.t('publicLists.owner') }}: {{ list.owner }} | 
+              {{ i18n.t('myLists.created') }}: {{ list.createdAt | date:'short' }} |
+              {{ i18n.t('myLists.links') }}: {{ list.linkIds.length || 0 }}
             </div>
             @if (voteStatsMap()[list.id]; as vs) {
               <div class="mt-1">
@@ -38,7 +39,7 @@ import { StarRatingComponent } from '../components/star-rating.component';
             }
           </div>
         } @empty {
-          <p class="text-gray-500">No public lists found.</p>
+          <p style="color: var(--color-text-muted)">{{ i18n.t('publicLists.noLists') }}</p>
         }
       </div>
 
@@ -51,9 +52,9 @@ import { StarRatingComponent } from '../components/star-rating.component';
             Previous
           </button>
           <span class="text-sm text-gray-600">
-            Page {{ page() + 1 }} of {{ totalPages() }}
+            {{ i18n.t('publicLists.page') }} {{ page() + 1 }} {{ i18n.t('publicLists.of') }} {{ totalPages() }}
             <span class="mx-2">|</span>
-            {{ total() }} total lists
+            {{ total() }} {{ i18n.t('publicLists.totalLists') }}
           </span>
           <button
             (click)="nextPage()"
@@ -65,7 +66,7 @@ import { StarRatingComponent } from '../components/star-rating.component';
       }
 
        <div class="mt-8">
-        <a routerLink="/my-lists" class="text-blue-600 underline">Back to My Lists</a>
+        <a routerLink="/my-lists" class="text-blue-600 underline">{{ i18n.t('publicLists.backToMyLists') }}</a>
       </div>
     </div>
   `
@@ -73,6 +74,7 @@ import { StarRatingComponent } from '../components/star-rating.component';
 export class PublicListsComponent implements OnInit {
   private readonly linkService = inject(LinkService);
   private readonly socialService = inject(SocialService);
+  protected readonly i18n = inject(I18nService);
 
   readonly lists = signal<LinkList[]>([]);
   readonly page = signal(0);

@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { SocialService } from '../services/social.service';
 import { Comment } from '../models';
+import { I18nService } from '../services/i18n.service';
 
 @Component({
   selector: 'app-comments-section',
@@ -10,18 +11,18 @@ import { Comment } from '../models';
   imports: [DatePipe, FormsModule],
   template: `
     <div class="comments-section">
-      <h3 class="comments-title">Comments</h3>
+      <h3 class="comments-title">{{ i18n.t('comments.title') }}</h3>
 
       @if (!hasUserComment() && currentUser()) {
         <div class="add-comment">
           <textarea
             [(ngModel)]="newCommentText"
-            placeholder="Write your comment..."
+            [placeholder]="i18n.t('comments.writePlaceholder')"
             class="comment-input"
             rows="3"
             [attr.aria-label]="'Write a comment'"></textarea>
           <button (click)="submitComment()" class="comment-submit-btn" [disabled]="!newCommentText.trim()">
-            Post Comment
+            {{ i18n.t('comments.postComment') }}
           </button>
         </div>
       }
@@ -31,13 +32,33 @@ import { Comment } from '../models';
           <div class="comment-header">
             <strong>{{ comment.userId }}</strong>
             <span class="comment-date">{{ comment.createdAt | date:'medium' }}</span>
+            @if (isEdited(comment)) {
+              <span class="edited-badge">{{ i18n.t('comments.edited') }}</span>
+            }
+            @if (canEdit(comment)) {
+              <button (click)="startEdit(comment)" class="edit-btn" [attr.aria-label]="i18n.t('comments.title')">&#9998;</button>
+            }
             @if (canDelete(comment)) {
-              <button (click)="onDeleteComment(comment)" class="delete-btn" aria-label="Delete comment">
+              <button (click)="onDeleteComment(comment)" class="delete-btn" [attr.aria-label]="i18n.t('common.delete')">
                 &#10005;
               </button>
             }
           </div>
-          <div class="comment-body">{{ comment.content }}</div>
+          @if (editingId() === comment.id) {
+            <div class="edit-form">
+              <textarea
+                [(ngModel)]="editText"
+                class="comment-input"
+                rows="3"
+                [attr.aria-label]="'Edit your comment'"></textarea>
+              <div class="reply-actions">
+                <button (click)="saveEdit(comment.id)" class="comment-submit-btn" [disabled]="!editText.trim()">{{ i18n.t('listDetail.save') }}</button>
+                <button (click)="cancelEdit()" class="cancel-btn">{{ i18n.t('listDetail.cancel') }}</button>
+              </div>
+            </div>
+          } @else {
+            <div class="comment-body">{{ comment.content }}</div>
+          }
 
           @if (comment.replies.length) {
             <div class="replies">
@@ -46,13 +67,33 @@ import { Comment } from '../models';
                   <div class="comment-header">
                     <strong>{{ reply.userId }}</strong>
                     <span class="comment-date">{{ reply.createdAt | date:'medium' }}</span>
+                    @if (isEdited(reply)) {
+                      <span class="edited-badge">{{ i18n.t('comments.edited') }}</span>
+                    }
+                    @if (canEdit(reply)) {
+                      <button (click)="startEdit(reply)" class="edit-btn" [attr.aria-label]="i18n.t('comments.title')">&#9998;</button>
+                    }
                     @if (canDelete(reply)) {
-                      <button (click)="onDeleteComment(reply)" class="delete-btn" aria-label="Delete reply">
+                      <button (click)="onDeleteComment(reply)" class="delete-btn" [attr.aria-label]="i18n.t('common.delete')">
                         &#10005;
                       </button>
                     }
                   </div>
-                  <div class="comment-body">{{ reply.content }}</div>
+                  @if (editingId() === reply.id) {
+                    <div class="edit-form">
+                      <textarea
+                        [(ngModel)]="editText"
+                        class="comment-input reply-input"
+                        rows="2"
+                        [attr.aria-label]="'Edit your reply'"></textarea>
+                      <div class="reply-actions">
+                        <button (click)="saveEdit(reply.id)" class="comment-submit-btn" [disabled]="!editText.trim()">{{ i18n.t('listDetail.save') }}</button>
+                        <button (click)="cancelEdit()" class="cancel-btn">{{ i18n.t('listDetail.cancel') }}</button>
+                      </div>
+                    </div>
+                  } @else {
+                    <div class="comment-body">{{ reply.content }}</div>
+                  }
                 </div>
               }
             </div>
@@ -63,24 +104,24 @@ import { Comment } from '../models';
               <div class="reply-form">
                 <textarea
                   [(ngModel)]="replyText"
-                  placeholder="Write a reply..."
+                  [placeholder]="i18n.t('comments.replyPlaceholder')"
                   class="comment-input reply-input"
                   rows="2"
                   [attr.aria-label]="'Reply to comment by ' + comment.userId"></textarea>
                 <div class="reply-actions">
                   <button (click)="submitReply(comment.id)" class="comment-submit-btn" [disabled]="!replyText.trim()">
-                    Reply
+                    {{ i18n.t('comments.reply') }}
                   </button>
-                  <button (click)="cancelReply()" class="cancel-btn">Cancel</button>
+                  <button (click)="cancelReply()" class="cancel-btn">{{ i18n.t('comments.cancel') }}</button>
                 </div>
               </div>
             } @else {
-              <button (click)="startReply(comment.id)" class="reply-trigger-btn">Reply</button>
+              <button (click)="startReply(comment.id)" class="reply-trigger-btn">{{ i18n.t('comments.reply') }}</button>
             }
           }
         </div>
       } @empty {
-        <p class="no-comments">No comments yet. Be the first to comment!</p>
+        <p class="no-comments">{{ i18n.t('comments.noComments') }}</p>
       }
     </div>
   `,
@@ -89,25 +130,27 @@ import { Comment } from '../models';
     .comments-title {
       font-size: 1.1rem;
       font-weight: 700;
-      color: #1e3a8a;
+      color: var(--color-btn-text);
       margin-bottom: 0.75rem;
-      border-bottom: 2px solid #dbeafe;
+      border-bottom: 2px solid var(--color-panel-border);
       padding-bottom: 0.5rem;
     }
     .add-comment { margin-bottom: 1rem; }
     .comment-input {
       width: 100%;
       padding: 0.5rem;
-      border: 1px solid #cbd5e1;
+      border: 1px solid var(--color-input-border);
       border-radius: 0.4rem;
       font-family: inherit;
       resize: vertical;
+      background: var(--color-input-bg);
+      color: var(--color-text);
     }
     .reply-input { font-size: 0.9rem; }
     .comment-submit-btn {
       margin-top: 0.5rem;
       padding: 0.4rem 1rem;
-      background: #2563eb;
+      background: var(--color-link);
       color: white;
       border: none;
       border-radius: 0.4rem;
@@ -115,15 +158,15 @@ import { Comment } from '../models';
       font-weight: 600;
     }
     .comment-submit-btn:disabled {
-      background: #93c5fd;
+      background: var(--color-input-border);
       cursor: not-allowed;
     }
     .comment-card {
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--color-card-border);
       border-radius: 0.5rem;
       padding: 0.75rem;
       margin-bottom: 0.75rem;
-      background: #f8fafc;
+      background: var(--color-card-bg);
     }
     .comment-header {
       display: flex;
@@ -132,50 +175,66 @@ import { Comment } from '../models';
       margin-bottom: 0.35rem;
       font-size: 0.85rem;
     }
-    .comment-date { color: #6b7280; font-size: 0.8rem; }
-    .comment-body { color: #374151; line-height: 1.5; }
+    .comment-date { color: var(--color-text-muted); font-size: 0.8rem; }
+    .comment-body { color: var(--color-text); line-height: 1.5; }
     .delete-btn {
       margin-left: auto;
       background: none;
       border: none;
-      color: #ef4444;
+      color: var(--color-error);
       cursor: pointer;
       font-size: 0.9rem;
       padding: 0 0.3rem;
     }
-    .delete-btn:hover { color: #b91c1c; }
+    .delete-btn:hover { color: var(--color-error); }
     .replies {
       margin-left: 1.5rem;
       margin-top: 0.5rem;
-      border-left: 2px solid #dbeafe;
+      border-left: 2px solid var(--color-panel-border);
       padding-left: 0.75rem;
     }
     .reply-card {
       padding: 0.5rem;
       margin-bottom: 0.5rem;
-      background: #eff6ff;
+      background: var(--color-row-even);
       border-radius: 0.4rem;
     }
     .reply-form { margin-top: 0.5rem; }
     .reply-actions { display: flex; gap: 0.5rem; margin-top: 0.35rem; }
     .cancel-btn {
       padding: 0.4rem 0.75rem;
-      background: #e5e7eb;
+      background: var(--color-card-border);
       border: none;
       border-radius: 0.4rem;
       cursor: pointer;
+      color: var(--color-text);
     }
     .reply-trigger-btn {
       margin-top: 0.4rem;
       background: none;
       border: none;
-      color: #2563eb;
+      color: var(--color-link);
       cursor: pointer;
       font-size: 0.85rem;
       padding: 0;
     }
     .reply-trigger-btn:hover { text-decoration: underline; }
-    .no-comments { color: #6b7280; font-style: italic; }
+    .no-comments { color: var(--color-text-muted); font-style: italic; }
+    .edit-btn {
+      background: none;
+      border: none;
+      color: var(--color-link);
+      cursor: pointer;
+      font-size: 0.9rem;
+      padding: 0 0.3rem;
+    }
+    .edit-btn:hover { color: var(--color-link); }
+    .edited-badge {
+      color: var(--color-text-muted);
+      font-size: 0.75rem;
+      font-style: italic;
+    }
+    .edit-form { margin-top: 0.35rem; }
   `]
 })
 export class CommentsSectionComponent implements OnInit {
@@ -187,11 +246,14 @@ export class CommentsSectionComponent implements OnInit {
   readonly commentChanged = output<void>();
 
   private readonly socialService = inject(SocialService);
+  protected readonly i18n = inject(I18nService);
 
   readonly comments = signal<Comment[]>([]);
   readonly replyingTo = signal<string | null>(null);
+  readonly editingId = signal<string | null>(null);
   newCommentText = '';
   replyText = '';
+  editText = '';
 
   ngOnInit() {
     this.loadComments();
@@ -213,6 +275,41 @@ export class CommentsSectionComponent implements OnInit {
     const user = this.currentUser();
     if (!user) return false;
     return comment.userId === user || this.isAdmin();
+  }
+
+  protected canEdit(comment: Comment): boolean {
+    const user = this.currentUser();
+    if (!user) return false;
+    return comment.userId === user;
+  }
+
+  protected isEdited(comment: Comment): boolean {
+    return comment.updatedAt !== comment.createdAt;
+  }
+
+  protected startEdit(comment: Comment): void {
+    this.editingId.set(comment.id);
+    this.editText = comment.content;
+  }
+
+  protected cancelEdit(): void {
+    this.editingId.set(null);
+    this.editText = '';
+  }
+
+  protected saveEdit(commentId: string): void {
+    const content = this.editText.trim();
+    if (!content) return;
+
+    this.socialService.editComment(commentId, content).subscribe({
+      next: () => {
+        this.editingId.set(null);
+        this.editText = '';
+        this.loadComments();
+        this.commentChanged.emit();
+      },
+      error: (err: Error) => console.error('Failed to edit comment:', err.message)
+    });
   }
 
   protected submitComment(): void {
@@ -255,7 +352,7 @@ export class CommentsSectionComponent implements OnInit {
   }
 
   protected onDeleteComment(comment: Comment): void {
-    if (!globalThis.confirm('Are you sure you want to delete this comment?')) return;
+    if (!globalThis.confirm(this.i18n.t('comments.deleteConfirm'))) return;
 
     this.socialService.deleteComment(comment.id).subscribe({
       next: () => {
