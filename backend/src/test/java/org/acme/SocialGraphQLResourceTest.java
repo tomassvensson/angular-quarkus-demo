@@ -181,19 +181,25 @@ class SocialGraphQLResourceTest {
                 .body("data.addReply.parentId", is(testCommentId));
     }
 
-    @Test
-    @Order(23)
-    @TestSecurity(user = "commenter1", roles = {"RegularUser"})
-    void testOriginalPosterCanReply() {
-        String mutation = "mutation AddReply($commentId: String!, $content: String!) { addReply(commentId: $commentId, content: $content) { id userId } }";
-        String vars = String.format("{\"commentId\": \"%s\", \"content\": \"A follow-up reply.\"}", testCommentId);
+    // Helper to execute an addReply mutation and return the ValidatableResponse for assertions.
+    // Each test needs a separate @TestSecurity annotation, so parameterization is not possible. // NOSONAR java:S5976
+    private io.restassured.response.ValidatableResponse executeAddReply(String content) {
+        String mutation = "mutation AddReply($commentId: String!, $content: String!) { addReply(commentId: $commentId, content: $content) { id userId content parentId } }";
+        String vars = String.format("{\"commentId\": \"%s\", \"content\": \"%s\"}", testCommentId, content);
 
-        given()
+        return given()
             .contentType(ContentType.JSON)
             .body(graphqlBody(mutation, vars))
             .when().post("/api/v1/graphql")
             .then()
-                .statusCode(200)
+                .statusCode(200);
+    }
+
+    @Test
+    @Order(23)
+    @TestSecurity(user = "commenter1", roles = {"RegularUser"})
+    void testOriginalPosterCanReply() {
+        executeAddReply("A follow-up reply.")
                 .body("data.addReply.userId", is("commenter1"));
     }
 
@@ -201,15 +207,7 @@ class SocialGraphQLResourceTest {
     @Order(24)
     @TestSecurity(user = "randomUser", roles = {"RegularUser"})
     void testUnauthorizedUserCannotReply() {
-        String mutation = "mutation AddReply($commentId: String!, $content: String!) { addReply(commentId: $commentId, content: $content) { id } }";
-        String vars = String.format("{\"commentId\": \"%s\", \"content\": \"Should fail\"}", testCommentId);
-
-        given()
-            .contentType(ContentType.JSON)
-            .body(graphqlBody(mutation, vars))
-            .when().post("/api/v1/graphql")
-            .then()
-                .statusCode(200)
+        executeAddReply("Should fail")
                 .body("errors", not(empty()));
     }
 
@@ -217,15 +215,7 @@ class SocialGraphQLResourceTest {
     @Order(25)
     @TestSecurity(user = "adminUser", roles = {"AdminUser"})
     void testAdminCanReply() {
-        String mutation = "mutation AddReply($commentId: String!, $content: String!) { addReply(commentId: $commentId, content: $content) { id userId } }";
-        String vars = String.format("{\"commentId\": \"%s\", \"content\": \"Admin response.\"}", testCommentId);
-
-        given()
-            .contentType(ContentType.JSON)
-            .body(graphqlBody(mutation, vars))
-            .when().post("/api/v1/graphql")
-            .then()
-                .statusCode(200)
+        executeAddReply("Admin response.")
                 .body("data.addReply.userId", is("adminUser"));
     }
 

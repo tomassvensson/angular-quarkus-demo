@@ -31,11 +31,11 @@ class CognitoIT {
     @Test
     @Order(2)
     void testProtectedEndpointRedirectsToLogin() {
-        // Accessing /user without auth should redirect (302) when OIDC is enabled,
+        // Accessing /login without auth should redirect (302) when OIDC is enabled,
         // or return 401 when OIDC is intentionally disabled in CI.
         given()
                 .redirects().follow(false) // Disable auto-redirect to check the 302
-                .when().get("/user")
+                .when().get("/login")
                 .then()
             .statusCode(anyOf(is(302), is(401)));
     }

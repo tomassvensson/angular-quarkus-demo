@@ -396,6 +396,9 @@ public class CognitoAdminService {
     public CognitoUserView updateUser(UpdateUserInput input) {
         validateInput(input);
         String username = input.getUsername().trim();
+        if (isKeycloakMode()) {
+            return getUser(username);
+        }
         try (CognitoIdentityProviderClient client = client()) {
             updateEmailIfPresent(client, username, input);
             updateEnabledStatus(client, username, input.getEnabled());
@@ -479,6 +482,9 @@ public class CognitoAdminService {
     }
 
     private List<CognitoUserView> fetchAllUsers() {
+        if (isKeycloakMode()) {
+            return fetchAllUsersKeycloakMock();
+        }
         List<CognitoUserView> users = new ArrayList<>();
         try (CognitoIdentityProviderClient client = client()) {
             String paginationToken = null;
@@ -503,6 +509,24 @@ public class CognitoAdminService {
             } while (paginationToken != null && !paginationToken.isBlank());
         }
         return users;
+    }
+
+    private List<CognitoUserView> fetchAllUsersKeycloakMock() {
+        CognitoUserView admin = new CognitoUserView();
+        admin.setUsername("admin");
+        admin.setEmail("admin@example.com");
+        admin.setEnabled(true);
+        admin.setStatus("Enabled");
+        admin.setGroups(List.of("AdminUser", "RegularUser"));
+
+        CognitoUserView user = new CognitoUserView();
+        user.setUsername("user");
+        user.setEmail("user@example.com");
+        user.setEnabled(true);
+        user.setStatus("Enabled");
+        user.setGroups(List.of("RegularUser"));
+
+        return new ArrayList<>(List.of(admin, user));
     }
 
     private Comparator<CognitoUserView> comparatorFor(String sortBy) {

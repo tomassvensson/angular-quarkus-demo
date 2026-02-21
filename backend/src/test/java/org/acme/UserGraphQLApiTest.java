@@ -7,6 +7,9 @@ import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.empty;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.notNullValue;
 
 @QuarkusTest
 class UserGraphQLApiTest {
@@ -168,5 +171,183 @@ class UserGraphQLApiTest {
                 .then()
                 .statusCode(200)
                 .body("data.verifyTotp", is(true));
+    }
+
+    // ---- Admin queries ----
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"AdminUser"})
+    void testUsersQueryAsAdmin() {
+        String query = "{\"query\": \"query { users(page: 0, size: 10) { items { username email } page size total } }\"}";
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(query)
+                .when().post("/api/v1/graphql")
+                .then()
+                .statusCode(200)
+                .body("data.users.page", is(0))
+                .body("data.users.size", is(10))
+                .body("data.users.total", greaterThanOrEqualTo(1))
+                .body("data.users.items", notNullValue());
+    }
+
+    @Test
+    @TestSecurity(user = "alice", roles = {"RegularUser"})
+    void testUsersQueryAsNonAdminIsDenied() {
+        String query = "{\"query\": \"query { users(page: 0, size: 10) { items { username } total } }\"}";
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(query)
+                .when().post("/api/v1/graphql")
+                .then()
+                .statusCode(200)
+                .body("errors", notNullValue());
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"AdminUser"})
+    void testUserQueryAsAdmin() {
+        String query = "{\"query\": \"query { user(username: \\\"admin\\\") { username email groups } }\"}";
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(query)
+                .when().post("/api/v1/graphql")
+                .then()
+                .statusCode(200)
+                .body("data.user.username", is("admin"));
+    }
+
+    @Test
+    @TestSecurity(user = "alice", roles = {"RegularUser"})
+    void testUserQueryOwnProfile() {
+        String query = "{\"query\": \"query { user(username: \\\"alice\\\") { username email } }\"}";
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(query)
+                .when().post("/api/v1/graphql")
+                .then()
+                .statusCode(200)
+                .body("data.user.username", is("alice"));
+    }
+
+    @Test
+    @TestSecurity(user = "alice", roles = {"RegularUser"})
+    void testUserQueryOtherUserDenied() {
+        String query = "{\"query\": \"query { user(username: \\\"bob\\\") { username } }\"}";
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(query)
+                .when().post("/api/v1/graphql")
+                .then()
+                .statusCode(200)
+                .body("errors", notNullValue());
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"AdminUser"})
+    void testGroupsQueryAsAdmin() {
+        String query = "{\"query\": \"query { groups }\"}";
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(query)
+                .when().post("/api/v1/graphql")
+                .then()
+                .statusCode(200)
+                .body("data.groups", notNullValue());
+    }
+
+    @Test
+    @TestSecurity(user = "alice", roles = {"RegularUser"})
+    void testGroupsQueryAsNonAdminDenied() {
+        String query = "{\"query\": \"query { groups }\"}";
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(query)
+                .when().post("/api/v1/graphql")
+                .then()
+                .statusCode(200)
+                .body("errors", notNullValue());
+    }
+
+    @Test
+    @TestSecurity(user = "admin", roles = {"AdminUser"})
+    void testUpdateUserAsAdmin() {
+        String mutation = "{\"query\": \"mutation UpdateUser($input: UpdateUserInput!) { updateUser(input: $input) { username email enabled } }\", " +
+                "\"variables\": {\"input\": {\"username\": \"admin\", \"email\": \"admin-new@example.com\", \"enabled\": true}}}";
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(mutation)
+                .when().post("/api/v1/graphql")
+                .then()
+                .statusCode(200)
+                .body("data.updateUser.username", is("admin"));
+    }
+
+    @Test
+    @TestSecurity(user = "alice", roles = {"RegularUser"})
+    void testUpdateUserAsNonAdminDenied() {
+        String mutation = "{\"query\": \"mutation UpdateUser($input: UpdateUserInput!) { updateUser(input: $input) { username } }\", " +
+                "\"variables\": {\"input\": {\"username\": \"bob\", \"email\": \"bob@test.com\"}}}";
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(mutation)
+                .when().post("/api/v1/graphql")
+                .then()
+                .statusCode(200)
+                .body("errors", notNullValue());
+    }
+
+    @Test
+    @TestSecurity(user = "alice", roles = {"RegularUser"})
+    void testMeQueryEmailFallback() {
+        // When email attribute is blank, should fall back to username
+        String query = "{\"query\": \"query { me { username email roles } }\"}";
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(query)
+                .when().post("/api/v1/graphql")
+                .then()
+                .statusCode(200)
+                .body("data.me.username", is("alice"))
+                .body("data.me.email", notNullValue());
+    }
+
+    @Test
+    @TestSecurity(user = "alice", roles = {"RegularUser"})
+    void testChangePasswordNullInput() {
+        // Send null input (no variables)
+        String mutation = "{\"query\": \"mutation ChangePassword($input: ChangePasswordInput!) { changePassword(input: $input) }\"}";
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(mutation)
+                .when().post("/api/v1/graphql")
+                .then()
+                .statusCode(200)
+                .body("errors", notNullValue());
+    }
+
+    @Test
+    @TestSecurity(user = "alice", roles = {"RegularUser"})
+    void testSetMfaPreferenceNullInput() {
+        String mutation = "{\"query\": \"mutation { setMfaPreference(input: null) }\"}";
+
+        given()
+                .contentType(ContentType.JSON)
+                .body(mutation)
+                .when().post("/api/v1/graphql")
+                .then()
+                .statusCode(200)
+                .body("errors", notNullValue());
     }
 }
