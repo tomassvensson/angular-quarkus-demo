@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { SocialService } from '../services/social.service';
 import { Notification } from '../models';
+import { I18nService } from '../services/i18n.service';
 
 @Component({
   selector: 'app-notifications-page',
@@ -11,12 +12,12 @@ import { Notification } from '../models';
   template: `
     <div class="p-4">
       <div class="flex justify-between items-center mb-4">
-        <h1 class="text-2xl font-bold">Notifications</h1>
+        <h1 class="text-2xl font-bold">{{ i18n.t('notifications.title') }}</h1>
         <div class="flex items-center gap-4">
           @if (unreadCount() > 0) {
-            <span class="text-sm text-gray-600">{{ unreadCount() }} unread</span>
+            <span class="text-sm text-gray-600">{{ unreadCount() }} {{ i18n.t('notifications.unread') }}</span>
             <button (click)="markAllRead()" class="text-sm text-blue-600 hover:underline cursor-pointer">
-              Mark all as read
+              {{ i18n.t('notifications.markAllRead') }}
             </button>
           }
         </div>
@@ -36,10 +37,10 @@ import { Notification } from '../models';
               {{ notification.actorUsername }}
             </span>
             <span class="notification-type">
-              {{ notification.type === 'COMMENT' ? 'commented on' : 'replied on' }}
+              {{ notification.type === 'COMMENT' ? i18n.t('notifications.commentedOn') : i18n.t('notifications.repliedOn') }}
             </span>
             <span class="notification-entity">
-              {{ notification.entityType === 'LIST' ? 'a list' : 'a link' }}
+              {{ notification.entityType === 'LIST' ? i18n.t('notifications.aList') : i18n.t('notifications.aLink') }}
             </span>
           </div>
           <div class="notification-preview" [class.font-bold]="!notification.read">
@@ -50,7 +51,7 @@ import { Notification } from '../models';
           </div>
         </div>
       } @empty {
-        <p class="text-gray-500">No notifications yet.</p>
+        <p style="color: var(--color-text-muted)">{{ i18n.t('notifications.noNotifications') }}</p>
       }
 
       @if (totalPages() > 1) {
@@ -62,7 +63,7 @@ import { Notification } from '../models';
             Previous
           </button>
           <span class="text-sm text-gray-600">
-            Page {{ page() + 1 }} of {{ totalPages() }}
+            {{ i18n.t('publicLists.page') }} {{ page() + 1 }} {{ i18n.t('publicLists.of') }} {{ totalPages() }}
           </span>
           <button
             (click)="nextPage()"
@@ -76,32 +77,32 @@ import { Notification } from '../models';
   `,
   styles: [`
     .notification-item {
-      border: 1px solid #e5e7eb;
+      border: 1px solid var(--color-card-border);
       border-radius: 0.5rem;
       padding: 0.75rem 1rem;
       margin-bottom: 0.5rem;
       cursor: pointer;
       transition: background 0.15s;
-      background: white;
+      background: var(--color-card-bg);
     }
-    .notification-item:hover { background: #f0f7ff; }
+    .notification-item:hover { background: var(--color-row-hover); }
     .notification-item.unread {
-      background: #eff6ff;
-      border-left: 3px solid #2563eb;
+      background: var(--color-row-even);
+      border-left: 3px solid var(--color-link);
     }
     .notification-header {
       display: flex;
       gap: 0.3rem;
       font-size: 0.9rem;
-      color: #374151;
+      color: var(--color-text);
       flex-wrap: wrap;
     }
-    .notification-actor { color: #1d4ed8; }
-    .notification-type { color: #6b7280; }
-    .notification-entity { color: #6b7280; }
+    .notification-actor { color: var(--color-link); }
+    .notification-type { color: var(--color-text-muted); }
+    .notification-entity { color: var(--color-text-muted); }
     .notification-preview {
       margin-top: 0.25rem;
-      color: #4b5563;
+      color: var(--color-text-muted);
       font-size: 0.85rem;
       white-space: nowrap;
       overflow: hidden;
@@ -110,13 +111,14 @@ import { Notification } from '../models';
     .notification-date {
       margin-top: 0.25rem;
       font-size: 0.75rem;
-      color: #9ca3af;
+      color: var(--color-text-muted);
     }
   `]
 })
 export class NotificationsPageComponent implements OnInit {
   private readonly socialService = inject(SocialService);
   private readonly router = inject(Router);
+  protected readonly i18n = inject(I18nService);
 
   readonly notifications = signal<Notification[]>([]);
   readonly page = signal(0);

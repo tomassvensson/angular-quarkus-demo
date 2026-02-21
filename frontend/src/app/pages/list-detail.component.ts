@@ -7,6 +7,7 @@ import { SocialService } from '../services/social.service';
 import { LinkList, Link, VoteStats } from '../models';
 import { StarRatingComponent } from '../components/star-rating.component';
 import { CommentsSectionComponent } from '../components/comments-section.component';
+import { I18nService } from '../services/i18n.service';
 
 @Component({
   selector: 'app-list-detail',
@@ -20,15 +21,15 @@ import { CommentsSectionComponent } from '../components/comments-section.compone
             @if (isOwner(l) && editingName) {
                 <div class="flex gap-2">
                     <input [(ngModel)]="editNameValue" class="border p-1 rounded" />
-                    <button (click)="saveName()" class="bg-blue-500 text-white px-2 rounded cursor-pointer">Save</button>
-                    <button (click)="cancelEditName()" class="text-gray-500 px-2 cursor-pointer">Cancel</button>
+                    <button (click)="saveName()" class="bg-blue-500 text-white px-2 rounded cursor-pointer">{{ i18n.t('listDetail.save') }}</button>
+                    <button (click)="cancelEditName()" class="text-gray-500 px-2 cursor-pointer">{{ i18n.t('listDetail.cancel') }}</button>
                 </div>
             } @else {
                 <h1 class="text-2xl font-bold flex items-center gap-2">
                     {{ l.name }}
                     @if (isOwner(l)) {
                         <button (click)="startEditName(l)" class="text-sm text-blue-500 font-normal border px-1 rounded hover:bg-gray-100 cursor-pointer">
-                            Edit Name
+                            {{ i18n.t('listDetail.editName') }}
                         </button>
                     }
                 </h1>
@@ -36,20 +37,20 @@ import { CommentsSectionComponent } from '../components/comments-section.compone
              <div class="flex gap-2">
                  @if (isOwner(l)) {
                     @if (l.published) {
-                        <button (click)="togglePublish(l)" class="bg-yellow-500 text-white px-3 py-1 rounded cursor-pointer">Unpublish</button>
+                        <button (click)="togglePublish(l)" class="bg-yellow-500 text-white px-3 py-1 rounded cursor-pointer">{{ i18n.t('myLists.unpublish') }}</button>
                     } @else {
-                        <button (click)="togglePublish(l)" class="bg-green-500 text-white px-3 py-1 rounded cursor-pointer">Publish</button>
+                        <button (click)="togglePublish(l)" class="bg-green-500 text-white px-3 py-1 rounded cursor-pointer">{{ i18n.t('myLists.publish') }}</button>
                     }
                  }
-                 <a routerLink="/my-lists" class="text-gray-600 underline self-center ml-4 cursor-pointer">My Lists</a>
+                 <a routerLink="/my-lists" class="underline self-center ml-4 cursor-pointer" style="color: var(--color-text-muted)">{{ i18n.t('listDetail.myLists') }}</a>
              </div>
           </div>
           
-          <div class="text-sm text-gray-600">
-            Owner: {{ l.owner }} | 
-            Created: {{ l.createdAt | date:'medium' }} | 
-            Last Edited: {{ l.updatedAt | date:'medium' }} |
-            Count: {{ links().length }}
+          <div class="text-sm" style="color: var(--color-text-muted)">
+            {{ i18n.t('listDetail.owner') }}: {{ l.owner }} | 
+            {{ i18n.t('listDetail.created') }}: {{ l.createdAt | date:'medium' }} | 
+            {{ i18n.t('listDetail.lastEdited') }}: {{ l.updatedAt | date:'medium' }} |
+            {{ i18n.t('listDetail.count') }}: {{ links().length }}
           </div>
           @if (listVoteStats(); as vs) {
             <div class="mt-2">
@@ -64,24 +65,24 @@ import { CommentsSectionComponent } from '../components/comments-section.compone
         </div>
 
         @if (isOwner(l)) {
-          <div class="mb-4 bg-gray-50 p-4 rounded border">
-            <h3 class="font-bold mb-2">Add New Link</h3>
+          <div class="mb-4 p-4 rounded border" [style.background]="'var(--color-row-even)'">
+            <h3 class="font-bold mb-2">{{ i18n.t('listDetail.addNewLink') }}</h3>
             <div class="flex gap-2 flex-wrap">
-              <input [(ngModel)]="newLinkUrl" placeholder="URL (https://...)" class="border p-2 rounded flex-1" />
-              <input [(ngModel)]="newLinkTitle" placeholder="Title" class="border p-2 rounded flex-1" />
-              <button (click)="addLink()" class="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">Add Link</button>
+              <input [(ngModel)]="newLinkUrl" [placeholder]="i18n.t('listDetail.urlPlaceholder')" class="border p-2 rounded flex-1" />
+              <input [(ngModel)]="newLinkTitle" [placeholder]="i18n.t('listDetail.titlePlaceholder')" class="border p-2 rounded flex-1" />
+              <button (click)="addLink()" class="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer">{{ i18n.t('listDetail.addLink') }}</button>
             </div>
           </div>
         }
 
         <div class="grid gap-2">
           @for (link of links(); track link.id) {
-            <div class="border p-3 rounded hover:bg-gray-50 flex justify-between items-center bg-white">
+            <div class="border p-3 rounded flex justify-between items-center" [style.background]="'var(--color-card-bg)'">
               <div class="flex-1">
-                <a [href]="link.url" target="_blank" class="text-blue-600 font-medium hover:underline text-lg cursor-pointer">
+                <a [href]="link.url" target="_blank" class="font-medium hover:underline text-lg cursor-pointer" style="color: var(--color-link)">
                   {{ link.title }}
                 </a>
-                <div class="text-xs text-gray-400">
+                <div class="text-xs" style="color: var(--color-text-muted)">
                     {{ link.url }} <span class="mx-1">•</span> Added: {{ link.createdAt | date:'short' }}
                 </div>
                 @if (linkVoteStats()[link.id]; as lvs) {
@@ -97,12 +98,12 @@ import { CommentsSectionComponent } from '../components/comments-section.compone
               </div>
               @if (isOwner(l)) {
                 <button (click)="removeLink(link)" class="text-red-500 hover:text-red-700 cursor-pointer">
-                  Remove
+                  {{ i18n.t('listDetail.remove') }}
                 </button>
               }
             </div>
           } @empty {
-            <p class="text-gray-500">No links in this list yet.</p>
+            <p style="color: var(--color-text-muted)">{{ i18n.t('listDetail.noLinks') }}</p>
           }
         </div>
 
@@ -114,7 +115,7 @@ import { CommentsSectionComponent } from '../components/comments-section.compone
           [isAdmin]="isAdmin()" />
 
       } @else {
-        <p>Loading...</p>
+        <p>{{ i18n.t('listDetail.loading') }}</p>
       }
     </div>
   `
@@ -124,6 +125,7 @@ export class ListDetailComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly linkService = inject(LinkService);
   private readonly socialService = inject(SocialService);
+  protected readonly i18n = inject(I18nService);
 
   readonly currentUser = signal<string>('');
   readonly isAdmin = signal(false);
@@ -217,7 +219,8 @@ export class ListDetailComponent implements OnInit {
 
   togglePublish(l: LinkList) {
     const action = l.published ? 'unpublish' : 'publish';
-    const conf = globalThis.confirm(`Are you sure you want to ${action} the list "${l.name}"?`);
+    const confirmKey = l.published ? 'myLists.confirmUnpublish' : 'myLists.confirmPublish';
+    const conf = globalThis.confirm(this.i18n.t(confirmKey, { name: l.name }));
     if (!conf) return;
     
     this.linkService.updateList(l.id, { published: !l.published }).subscribe(updated => {
@@ -228,15 +231,31 @@ export class ListDetailComponent implements OnInit {
   addLink() {
     const l = this.list();
     const cleanTitle = this.sanitize(this.newLinkTitle);
-    const cleanUrl = this.newLinkUrl.trim();
+    let cleanUrl = this.newLinkUrl.trim();
     
     if (!l || !cleanUrl || !cleanTitle) return;
 
-    // Basic URL validation
+    // Auto-prepend https:// if no protocol is given
+    if (!/^[a-zA-Z][a-zA-Z0-9+\-.]*:\/\//u.test(cleanUrl)) {
+      cleanUrl = 'https://' + cleanUrl;
+    }
+
+    // Validate the URL structure
     try {
-        new URL(cleanUrl);
+        const parsed = new URL(cleanUrl);
+        // Only allow http/https/ftp protocols
+        const allowedProtocols = ['http:', 'https:', 'ftp:'];
+        if (!allowedProtocols.includes(parsed.protocol)) {
+          globalThis.alert(this.i18n.t('validation.protocolNotAllowed'));
+          return;
+        }
+        // Ensure the hostname has at least one dot (e.g. example.com) or is localhost
+        if (!parsed.hostname.includes('.') && parsed.hostname !== 'localhost') {
+          globalThis.alert(this.i18n.t('validation.invalidDomain'));
+          return;
+        }
     } catch {
-        globalThis.alert('Please enter a valid URL (e.g. https://example.com)');
+        globalThis.alert(this.i18n.t('validation.invalidUrl'));
         return;
     }
 

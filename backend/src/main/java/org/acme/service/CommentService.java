@@ -134,6 +134,25 @@ public class CommentService {
     }
 
     /**
+     * Edit a comment's content. Only the original poster can edit their own comment.
+     */
+    public Comment editComment(String commentId, String userId, String newContent) {
+        Comment comment = getComment(commentId);
+        if (comment == null) {
+            throw new IllegalArgumentException("Comment not found");
+        }
+
+        if (!userId.equals(comment.getUserId())) {
+            throw new SecurityException("Only the comment author can edit this comment");
+        }
+
+        comment.setContent(newContent);
+        comment.setUpdatedAt(Instant.now());
+        commentTable.updateItem(comment);
+        return comment;
+    }
+
+    /**
      * Delete a comment (and its replies). Only the poster or an admin can delete.
      */
     public boolean deleteComment(String commentId, String userId, Set<String> userRoles) {
