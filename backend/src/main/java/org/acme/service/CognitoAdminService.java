@@ -38,14 +38,12 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.DeviceType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersResponse;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.NotAuthorizedException;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.SMSMfaSettingsType;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.SoftwareTokenMfaSettingsType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.UserType;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftwareTokenRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.VerifySoftwareTokenResponse;
 
-import java.time.Instant;
 import java.net.URI;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -60,6 +58,8 @@ import java.util.stream.Collectors;
 public class CognitoAdminService {
 
     private static final String ATTR_EMAIL = "email";
+    private static final String AUTH_PARAM_USERNAME = "USERNAME";
+    private static final String KEYCLOAK_MOCK_SUFFIX = " (keycloak mock)";
     private static final Logger LOG = Logger.getLogger(CognitoAdminService.class);
 
     @ConfigProperty(name = "aws.region")
@@ -82,6 +82,10 @@ public class CognitoAdminService {
 
     @ConfigProperty(name = "cognito.client-id", defaultValue = "placeholder")
     String cognitoClientId;
+
+    private boolean isKeycloakMode() {
+        return "keycloak".equalsIgnoreCase(authProvider);
+    }
 
     public CognitoUserPage listUsers(int page, int size, String sortBy, String direction) {
         int safePage = Math.max(0, page);
@@ -106,7 +110,7 @@ public class CognitoAdminService {
     }
 
     public CognitoUserView getUser(String username) {
-        if ("keycloak".equalsIgnoreCase(authProvider)) {
+        if (isKeycloakMode()) {
              // Mock for dev
              CognitoUserView view = new CognitoUserView();
              view.setUsername(username);
@@ -131,7 +135,7 @@ public class CognitoAdminService {
     }
 
     public boolean deleteUser(String username) {
-        if ("keycloak".equalsIgnoreCase(authProvider)) {
+        if (isKeycloakMode()) {
              // In mock/keycloak mode, we cannot call AWS Cognito.
              // We assume success for the demo.
              // Real implementation would call Keycloak Admin API.
@@ -156,9 +160,10 @@ public class CognitoAdminService {
      * @param username        the Cognito username
      * @param currentPassword the user's current password
      * @param newPassword     the desired new password
-     * @return true if the password was changed successfully
+     * @throws SecurityException if the current password is incorrect
+     * @throws CognitoOperationException if the password change fails
      */
-    public boolean changePassword(String username, String currentPassword, String newPassword) {
+    public void changePassword(String username, String currentPassword, String newPassword) {
         if (username == null || username.isBlank()) {
             throw new IllegalArgumentException("Username is required");
         }
@@ -169,9 +174,9 @@ public class CognitoAdminService {
             throw new IllegalArgumentException("New password is required");
         }
 
-        if ("keycloak".equalsIgnoreCase(authProvider)) {
+        if (isKeycloakMode()) {
             LOG.info("Password change requested for user " + username + " (keycloak mock - always succeeds)");
-            return true;
+            return;
         }
 
         try (CognitoIdentityProviderClient client = client()) {
@@ -187,7 +192,6 @@ public class CognitoAdminService {
                     .build());
 
             LOG.info("Password changed successfully for user: " + username);
-            return true;
         } catch (NotAuthorizedException e) {
             LOG.warn("Password change failed - incorrect current password for user: " + username);
             throw new SecurityException("Current password is incorrect");
@@ -195,7 +199,7 @@ public class CognitoAdminService {
             throw e;
         } catch (Exception e) {
             LOG.error("Failed to change password for user: " + username, e);
-            throw new RuntimeException("Failed to change password: " + e.getMessage(), e);
+            throw new CognitoOperationException("Failed to change password: " + e.getMessage(), e);
         }
     }
 
@@ -205,7 +209,7 @@ public class CognitoAdminService {
                 .clientId(cognitoClientId)
                 .authFlow(AuthFlowType.ADMIN_USER_PASSWORD_AUTH)
                 .authParameters(Map.of(
-                        "USERNAME", username,
+                        AUTH_PARAM_USERNAME, username,
                         "PASSWORD", currentPassword
                 ))
                 .build());
@@ -217,8 +221,8 @@ public class CognitoAdminService {
      * List trusted (remembered) devices for a user.
      */
     public List<TrustedDevice> listTrustedDevices(String username) {
-        if ("keycloak".equalsIgnoreCase(authProvider)) {
-            LOG.info("Listing trusted devices for " + username + " (keycloak mock - returns empty)");
+        if (isKeycloakMode()) {
+            LOG.info("Listing trusted devices for " + username + KEYCLOAK_MOCK_SUFFIX);
             return List.of();
         }
 
@@ -234,17 +238,17 @@ public class CognitoAdminService {
                     .toList();
         } catch (Exception e) {
             LOG.error("Failed to list devices for user: " + username, e);
-            throw new RuntimeException("Failed to list trusted devices: " + e.getMessage(), e);
+            throw new CognitoOperationException("Failed to list trusted devices: " + e.getMessage(), e);
         }
     }
 
     /**
      * Remove a trusted device.
      */
-    public boolean forgetDevice(String username, String deviceKey) {
-        if ("keycloak".equalsIgnoreCase(authProvider)) {
-            LOG.info("Forgetting device " + deviceKey + " for " + username + " (keycloak mock)");
-            return true;
+    public void forgetDevice(String username, String deviceKey) {
+        if (isKeycloakMode()) {
+            LOG.info("Forgetting device " + deviceKey + " for " + username + KEYCLOAK_MOCK_SUFFIX);
+            return;
         }
 
         try (CognitoIdentityProviderClient client = client()) {
@@ -254,43 +258,37 @@ public class CognitoAdminService {
                     .deviceKey(deviceKey)
                     .build());
             LOG.info("Device " + deviceKey + " forgotten for user: " + username);
-            return true;
         } catch (Exception e) {
             LOG.error("Failed to forget device " + deviceKey + " for user: " + username, e);
-            throw new RuntimeException("Failed to remove trusted device: " + e.getMessage(), e);
+            throw new CognitoOperationException("Failed to remove trusted device: " + e.getMessage(), e);
         }
     }
 
     /**
      * Set MFA preferences for a user (enable/disable TOTP and SMS MFA).
      */
-    public boolean setMfaPreference(String username, boolean totpEnabled, boolean smsEnabled, String preferredMethod) {
-        if ("keycloak".equalsIgnoreCase(authProvider)) {
-            LOG.info("Setting MFA preference for " + username + " (keycloak mock)");
-            return true;
+    public void setMfaPreference(String username, boolean totpEnabled, boolean smsEnabled, String preferredMethod) {
+        if (isKeycloakMode()) {
+            LOG.info("Setting MFA preference for " + username + KEYCLOAK_MOCK_SUFFIX);
+            return;
         }
 
         try (CognitoIdentityProviderClient client = client()) {
-            SMSMfaSettingsType.Builder smsSettings = SMSMfaSettingsType.builder()
-                    .enabled(smsEnabled)
-                    .preferredMfa("SMS".equalsIgnoreCase(preferredMethod));
-
-            SoftwareTokenMfaSettingsType.Builder totpSettings = SoftwareTokenMfaSettingsType.builder()
-                    .enabled(totpEnabled)
-                    .preferredMfa("TOTP".equalsIgnoreCase(preferredMethod));
-
             client.adminSetUserMFAPreference(AdminSetUserMfaPreferenceRequest.builder()
                     .userPoolId(userPoolId)
                     .username(username)
-                    .smsMfaSettings(smsSettings.build())
-                    .softwareTokenMfaSettings(totpSettings.build())
+                    .smsMfaSettings(sms -> sms
+                            .enabled(smsEnabled)
+                            .preferredMfa("SMS".equalsIgnoreCase(preferredMethod)))
+                    .softwareTokenMfaSettings(totp -> totp
+                            .enabled(totpEnabled)
+                            .preferredMfa("TOTP".equalsIgnoreCase(preferredMethod)))
                     .build());
 
             LOG.info("MFA preference updated for user: " + username);
-            return true;
         } catch (Exception e) {
             LOG.error("Failed to set MFA preference for user: " + username, e);
-            throw new RuntimeException("Failed to set MFA preference: " + e.getMessage(), e);
+            throw new CognitoOperationException("Failed to set MFA preference: " + e.getMessage(), e);
         }
     }
 
@@ -299,8 +297,8 @@ public class CognitoAdminService {
      * The user must use an authenticator app to scan the QR code, then verify with a TOTP code.
      */
     public MfaSetupResponse setupTotp(String username) {
-        if ("keycloak".equalsIgnoreCase(authProvider)) {
-            LOG.info("Setting up TOTP for " + username + " (keycloak mock)");
+        if (isKeycloakMode()) {
+            LOG.info("Setting up TOTP for " + username + KEYCLOAK_MOCK_SUFFIX);
             MfaSetupResponse response = new MfaSetupResponse();
             response.setSecretCode("MOCK_SECRET_FOR_DEV");
             response.setQrCodeUri("otpauth://totp/Demo:" + username + "?secret=MOCK_SECRET_FOR_DEV&issuer=AngularQuarkusDemo");
@@ -313,7 +311,7 @@ public class CognitoAdminService {
                     .userPoolId(userPoolId)
                     .clientId(cognitoClientId)
                     .authFlow(AuthFlowType.ADMIN_USER_PASSWORD_AUTH)
-                    .authParameters(Map.of("USERNAME", username))
+                    .authParameters(Map.of(AUTH_PARAM_USERNAME, username))
                     .build());
 
             AssociateSoftwareTokenResponse tokenResponse = client.associateSoftwareToken(
@@ -330,7 +328,7 @@ public class CognitoAdminService {
             return response;
         } catch (Exception e) {
             LOG.error("Failed to setup TOTP for user: " + username, e);
-            throw new RuntimeException("Failed to setup TOTP: " + e.getMessage(), e);
+            throw new CognitoOperationException("Failed to setup TOTP: " + e.getMessage(), e);
         }
     }
 
@@ -338,8 +336,8 @@ public class CognitoAdminService {
      * Verify TOTP code to complete MFA setup.
      */
     public boolean verifyTotp(String username, String totpCode) {
-        if ("keycloak".equalsIgnoreCase(authProvider)) {
-            LOG.info("Verifying TOTP for " + username + " (keycloak mock - always succeeds)");
+        if (isKeycloakMode()) {
+            LOG.info("Verifying TOTP for " + username + KEYCLOAK_MOCK_SUFFIX);
             return true;
         }
 
@@ -349,7 +347,7 @@ public class CognitoAdminService {
                     .userPoolId(userPoolId)
                     .clientId(cognitoClientId)
                     .authFlow(AuthFlowType.ADMIN_USER_PASSWORD_AUTH)
-                    .authParameters(Map.of("USERNAME", username))
+                    .authParameters(Map.of(AUTH_PARAM_USERNAME, username))
                     .build());
 
             VerifySoftwareTokenResponse verifyResponse = client.verifySoftwareToken(
@@ -370,7 +368,7 @@ public class CognitoAdminService {
             return success;
         } catch (Exception e) {
             LOG.error("Failed to verify TOTP for user: " + username, e);
-            throw new RuntimeException("Failed to verify TOTP code: " + e.getMessage(), e);
+            throw new CognitoOperationException("Failed to verify TOTP code: " + e.getMessage(), e);
         }
     }
 
@@ -580,7 +578,7 @@ public class CognitoAdminService {
         return value == null ? Instant.EPOCH : value;
     }
 
-    private CognitoIdentityProviderClient client() {
+    CognitoIdentityProviderClient client() {
         CognitoIdentityProviderClientBuilder builder = CognitoIdentityProviderClient.builder()
             .region(Region.of(awsRegion));
 

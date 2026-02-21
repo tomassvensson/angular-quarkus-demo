@@ -101,7 +101,8 @@ public class UserGraphQLApi {
             throw new IllegalArgumentException("Input is required");
         }
         String username = identity.getPrincipal().getName();
-        return cognitoAdminService.changePassword(username, input.getCurrentPassword(), input.getNewPassword());
+        cognitoAdminService.changePassword(username, input.getCurrentPassword(), input.getNewPassword());
+        return true;
     }
 
     @Query("groups")
@@ -123,7 +124,8 @@ public class UserGraphQLApi {
     @Authenticated
     public boolean forgetDevice(String deviceKey) {
         String username = identity.getPrincipal().getName();
-        return cognitoAdminService.forgetDevice(username, deviceKey);
+        cognitoAdminService.forgetDevice(username, deviceKey);
+        return true;
     }
 
     @Mutation("setMfaPreference")
@@ -133,7 +135,8 @@ public class UserGraphQLApi {
             throw new IllegalArgumentException("Input is required");
         }
         String username = identity.getPrincipal().getName();
-        return cognitoAdminService.setMfaPreference(username, input.isTotpEnabled(), input.isSmsEnabled(), input.getPreferredMethod());
+        cognitoAdminService.setMfaPreference(username, input.isTotpEnabled(), input.isSmsEnabled(), input.getPreferredMethod());
+        return true;
     }
 
     @Mutation("setupTotp")
