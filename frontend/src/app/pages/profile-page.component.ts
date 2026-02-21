@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { GraphqlApiService, CognitoUser } from '../services/graphql-api.service';
+import { I18nService } from '../services/i18n.service';
 
 @Component({
   selector: 'app-profile-page',
@@ -10,28 +11,28 @@ import { GraphqlApiService, CognitoUser } from '../services/graphql-api.service'
   imports: [CommonModule, FormsModule],
   template: `
     <section class="panel">
-      <h2>My Profile</h2>
+      <h2>{{ i18n.t('profile.title') }}</h2>
 
       @if (error()) {
         <p class="error">{{ error() }}</p>
       }
 
       @if (loading()) {
-        <p class="muted">Loading...</p>
+        <p class="muted">{{ i18n.t('profile.loading') }}</p>
       } @else if (user()) {
         <div class="form-grid">
           <div class="detail-card">
-            <label for="username">Username</label>
+            <label for="username">{{ i18n.t('profile.username') }}</label>
             <input id="username" [value]="user()?.username" disabled />
           </div>
 
           <div class="detail-card">
-            <label for="email">Email</label>
+            <label for="email">{{ i18n.t('profile.email') }}</label>
             <input id="email" [value]="user()?.email" disabled />
           </div>
 
           <div class="detail-card">
-            <label>Roles/Groups</label>
+            <label>{{ i18n.t('profile.rolesGroups') }}</label>
             <div class="group-grid">
               @for (group of user()?.groups; track group) {
                 <span class="group-pill">{{ group }}</span>
@@ -40,7 +41,7 @@ import { GraphqlApiService, CognitoUser } from '../services/graphql-api.service'
           </div>
           
           <div class="actions" style="margin-top: 20px;">
-             <button class="btn btn-danger" (click)="deleteAccount()">Delete Account</button>
+             <button class="btn btn-danger" (click)="deleteAccount()">{{ i18n.t('profile.deleteAccount') }}</button>
           </div>
         </div>
       }
@@ -48,22 +49,23 @@ import { GraphqlApiService, CognitoUser } from '../services/graphql-api.service'
   `,
   styles: [`
     .detail-card { margin-bottom: 1rem; }
-    .group-pill { background: #eee; padding: 4px 8px; border-radius: 4px; margin-right: 8px; display: inline-block; }
+    .group-pill { background: var(--color-pill-bg); color: var(--color-pill-text); border: 1px solid var(--color-pill-border); padding: 4px 8px; border-radius: 4px; margin-right: 8px; display: inline-block; }
     .btn-danger {
-      background-color: #dc3545;
+      background-color: var(--color-error);
       color: white;
       border: none;
       padding: 8px 16px;
       cursor: pointer;
       border-radius: 4px;
     }
-    .btn-danger:hover { background-color: #bb2d3b; }
-    input[disabled] { background-color: #f8f9fa; color: #666; }
+    .btn-danger:hover { background-color: var(--color-error); filter: brightness(0.85); }
+    input[disabled] { background-color: var(--color-input-bg); color: var(--color-text-muted); }
   `]
 })
 export class ProfilePageComponent implements OnInit {
   private readonly api = inject(GraphqlApiService);
   private readonly router = inject(Router);
+  protected readonly i18n = inject(I18nService);
 
   readonly loading = signal(true);
   readonly error = signal('');
@@ -123,11 +125,11 @@ export class ProfilePageComponent implements OnInit {
   deleteAccount() {
     if (!this.user()) return;
     const email = this.user()!.email;
-    if (confirm(`Are you sure you want to delete your account (${email})? This action cannot be undone.`)) {
+    if (confirm(this.i18n.t('profile.deleteConfirm', { email }))) {
         this.loading.set(true);
         this.api.deleteUser(this.user()!.username).subscribe({
             next: () => {
-                alert('Account deleted.');
+                alert(this.i18n.t('profile.deleted'));
                 // Force logout by redirecting to sign out url
                 globalThis.location.href = 'http://localhost:8080/logout'; // NOSONAR
             },

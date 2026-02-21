@@ -40,7 +40,8 @@ describe('CommentsSectionComponent', () => {
       getComments: vi.fn().mockReturnValue(of(mockComments)),
       addComment: vi.fn().mockReturnValue(of({ id: 'c2', userId: 'user2', content: 'New comment' })),
       addReply: vi.fn().mockReturnValue(of({ id: 'r2', userId: 'owner1', content: 'Reply' })),
-      deleteComment: vi.fn().mockReturnValue(of(true))
+      deleteComment: vi.fn().mockReturnValue(of(true)),
+      editComment: vi.fn().mockReturnValue(of({ id: 'c1', content: 'Edited' }))
     };
 
     await TestBed.configureTestingModule({
@@ -274,5 +275,67 @@ describe('CommentsSectionComponent', () => {
     const textareas = compiled.querySelectorAll('textarea');
     // Should not show the "add a comment" textarea (only reply form uses textarea)
     expect(textareas.length).toBe(0);
+  });
+
+  // --- Edit comment tests ---
+
+  it('should detect edited comments', () => {
+    const edited = { ...mockComments[0], updatedAt: '2026-01-02T00:00:00Z', createdAt: '2026-01-01T00:00:00Z' };
+    expect(component['isEdited'](edited as any)).toBe(true);
+  });
+
+  it('should not detect unedited comments as edited', () => {
+    const ts = '2026-01-01T00:00:00Z';
+    const same = { ...mockComments[0], createdAt: ts, updatedAt: ts };
+    expect(component['isEdited'](same as any)).toBe(false);
+  });
+
+  it('should start editing a comment', () => {
+    component['startEdit'](mockComments[0] as any);
+    expect(component.editingId()).toBe('c1');
+    expect(component.editText).toBe('Great list!');
+  });
+
+  it('should cancel editing', () => {
+    component['startEdit'](mockComments[0] as any);
+    component['cancelEdit']();
+    expect(component.editingId()).toBeNull();
+    expect(component.editText).toBe('');
+  });
+
+  it('should save edited comment', () => {
+    const emitSpy = vi.spyOn(component.commentChanged, 'emit');
+    component['startEdit'](mockComments[0] as any);
+    component.editText = 'Updated content';
+    component['saveEdit']('c1');
+    expect(socialServiceMock.editComment).toHaveBeenCalledWith('c1', 'Updated content');
+    expect(component.editingId()).toBeNull();
+    expect(emitSpy).toHaveBeenCalled();
+  });
+
+  it('should not save empty edit', () => {
+    component.editText = '   ';
+    component['saveEdit']('c1');
+    expect(socialServiceMock.editComment).not.toHaveBeenCalled();
+  });
+
+  it('should handle saveEdit error', () => {
+    socialServiceMock.editComment.mockReturnValue(throwError(() => new Error('fail')));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    component.editText = 'Updated content';
+    component['saveEdit']('c1');
+    expect(consoleSpy).toHaveBeenCalled();
+  });
+
+  it('should allow current user to edit their own comment', () => {
+    fixture.componentRef.setInput('currentUser', 'user1');
+    fixture.detectChanges();
+    expect(component['canEdit'](mockComments[0] as any)).toBe(true);
+  });
+
+  it('should not allow other user to edit a comment', () => {
+    fixture.componentRef.setInput('currentUser', 'someoneElse');
+    fixture.detectChanges();
+    expect(component['canEdit'](mockComments[0] as any)).toBe(false);
   });
 });

@@ -2,33 +2,35 @@
   <header class="topbar">
     <div class="brand">{{ title() }}</div>
     <nav class="menu">
-      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
+      <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">{{ i18n.t('nav.home') }}</a>
       @if (isAdmin()) {
-        <a routerLink="/users" routerLinkActive="active">List Users</a>
+        <a routerLink="/users" routerLinkActive="active">{{ i18n.t('nav.listUsers') }}</a>
       }
       @if (isSignedIn()) {
-        <a routerLink="/public-lists" routerLinkActive="active">Public Lists</a>
-        <a routerLink="/my-lists" routerLinkActive="active">My Lists</a>
-        <a routerLink="/profile" routerLinkActive="active">Profile</a>
+        <a routerLink="/public-lists" routerLinkActive="active">{{ i18n.t('nav.publicLists') }}</a>
+        <a routerLink="/my-lists" routerLinkActive="active">{{ i18n.t('nav.myLists') }}</a>
+        <a routerLink="/profile" routerLinkActive="active">{{ i18n.t('nav.profile') }}</a>
         <app-notification-bell />
       }
+      <app-language-selector />
+      <app-theme-toggle />
       @if (!isSignedIn()) {
-        <a class="menu-action" [href]="signInUrl">Sign in</a>
+        <a class="menu-action" [href]="signInUrl">{{ i18n.t('nav.signIn') }}</a>
       }
       @if (isSignedIn()) {
-        <a class="menu-action" [href]="signOutUrl">Sign out</a>
+        <a class="menu-action" [href]="signOutUrl">{{ i18n.t('nav.signOut') }}</a>
       }
     </nav>
   </header>
 
   <section class="status">
     @if (loading()) {
-      <span>Loading user...</span>
+      <span>{{ i18n.t('status.loading') }}</span>
     } @else if (me()) {
-      <span>Signed in as <strong>{{ me()?.username }}</strong></span>
-      <span>Roles: {{ me()?.roles?.join(', ') }}</span>
+      <span>{{ i18n.t('status.signedInAs') }} <strong>{{ me()?.username }}</strong></span>
+      <span>{{ i18n.t('status.roles') }}: {{ me()?.roles?.join(', ') }}</span>
     } @else {
-      <span>Not signed in</span>
+      <span>{{ i18n.t('status.notSignedIn') }}</span>
     }
   </section>
 

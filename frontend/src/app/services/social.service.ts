@@ -84,6 +84,16 @@ export class SocialService {
       .pipe(map(d => d.deleteComment));
   }
 
+  editComment(commentId: string, content: string): Observable<Comment> {
+    const m = `mutation EditComment($commentId: String!, $content: String!) {
+      editComment(commentId: $commentId, content: $content) {
+        id entityType entityId userId content parentId createdAt updatedAt
+      }
+    }`;
+    return this.query<{ editComment: Comment }>(m, { commentId, content })
+      .pipe(map(d => d.editComment));
+  }
+
   // ========== Notifications ==========
 
   getNotifications(page = 0, size = 20): Observable<NotificationPage> {

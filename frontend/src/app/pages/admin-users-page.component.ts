@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
 import { CognitoUserPage, GraphqlApiService } from '../services/graphql-api.service';
+import { I18nService } from '../services/i18n.service';
 
 @Component({
   selector: 'app-admin-users-page',
@@ -9,8 +10,8 @@ import { CognitoUserPage, GraphqlApiService } from '../services/graphql-api.serv
   imports: [DatePipe],
   template: `
     <section class="panel">
-      <h2>Users</h2>
-      <p class="muted">Admin view with pagination and sortable columns.</p>
+      <h2>{{ i18n.t('admin.users') }}</h2>
+      <p class="muted">{{ i18n.t('admin.description') }}</p>
 
       @if (error()) {
         <p class="error">{{ error() }}</p>
@@ -18,32 +19,32 @@ import { CognitoUserPage, GraphqlApiService } from '../services/graphql-api.serv
 
       <div class="table-wrap users-table-wrap">
         @if (loading()) {
-          <div class="table-overlay">Loading users...</div>
+          <div class="table-overlay">{{ i18n.t('admin.loadingUsers') }}</div>
         }
         <table class="users-table">
           <thead>
             <tr>
-              <th><button (click)="sort('username')">Username {{ sortIndicator('username') }}</button></th>
-              <th><button (click)="sort('email')">Email {{ sortIndicator('email') }}</button></th>
+              <th><button (click)="sort('username')">{{ i18n.t('admin.username') }} {{ sortIndicator('username') }}</button></th>
+              <th><button (click)="sort('email')">{{ i18n.t('admin.email') }} {{ sortIndicator('email') }}</button></th>
               <th>
-                <button (click)="sort('emailVerified')">Email verified {{ sortIndicator('emailVerified') }}</button>
+                <button (click)="sort('emailVerified')">{{ i18n.t('admin.emailVerified') }} {{ sortIndicator('emailVerified') }}</button>
               </th>
               <th>
                 <button (click)="sort('confirmationStatus')">
-                  Confirmation status {{ sortIndicator('confirmationStatus') }}
+                  {{ i18n.t('admin.confirmationStatus') }} {{ sortIndicator('confirmationStatus') }}
                 </button>
               </th>
-              <th><button (click)="sort('status')">Status {{ sortIndicator('status') }}</button></th>
-              <th><button (click)="sort('enabled')">Enabled {{ sortIndicator('enabled') }}</button></th>
-              <th><button (click)="sort('created')">Created {{ sortIndicator('created') }}</button></th>
+              <th><button (click)="sort('status')">{{ i18n.t('admin.status') }} {{ sortIndicator('status') }}</button></th>
+              <th><button (click)="sort('enabled')">{{ i18n.t('admin.enabled') }} {{ sortIndicator('enabled') }}</button></th>
+              <th><button (click)="sort('created')">{{ i18n.t('admin.created') }} {{ sortIndicator('created') }}</button></th>
               <th>
                 <button (click)="sort('lastUpdatedTime')">
-                  Last updated {{ sortIndicator('lastUpdatedTime') }}
+                  {{ i18n.t('admin.lastUpdated') }} {{ sortIndicator('lastUpdatedTime') }}
                 </button>
               </th>
-              <th><button (click)="sort('mfaSetting')">MFA setting {{ sortIndicator('mfaSetting') }}</button></th>
-              <th>Group membership</th>
-              <th>Action</th>
+              <th><button (click)="sort('mfaSetting')">{{ i18n.t('admin.mfaSetting') }} {{ sortIndicator('mfaSetting') }}</button></th>
+              <th>{{ i18n.t('admin.groupMembership') }}</th>
+              <th>{{ i18n.t('admin.action') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -51,16 +52,16 @@ import { CognitoUserPage, GraphqlApiService } from '../services/graphql-api.serv
               <tr (click)="openUser(user.username)">
                 <td>{{ user.username }}</td>
                 <td>{{ user.email }}</td>
-                <td>{{ user.emailVerified ? 'Yes' : 'No' }}</td>
+                <td>{{ user.emailVerified ? i18n.t('admin.yes') : i18n.t('admin.no') }}</td>
                 <td>{{ user.confirmationStatus }}</td>
                 <td>{{ user.status }}</td>
-                <td>{{ user.enabled ? 'Yes' : 'No' }}</td>
+                <td>{{ user.enabled ? i18n.t('admin.yes') : i18n.t('admin.no') }}</td>
                 <td>{{ user.created | date: 'yyyy-MM-dd HH:mm' }}</td>
                 <td>{{ user.lastUpdatedTime | date: 'yyyy-MM-dd HH:mm' }}</td>
                 <td>{{ user.mfaSetting }}</td>
-                <td>{{ user.groups.join(', ') || 'None' }}</td>
+                <td>{{ user.groups.join(', ') || i18n.t('admin.none') }}</td>
                 <td (click)="$event.stopPropagation()">
-                  <button class="btn-danger" (click)="deleteUser(user)">Delete</button>
+                  <button class="btn-danger" (click)="deleteUser(user)">{{ i18n.t('common.delete') }}</button>
                 </td>
               </tr>
             }
@@ -69,17 +70,17 @@ import { CognitoUserPage, GraphqlApiService } from '../services/graphql-api.serv
       </div>
 
       <div class="row pager-row" style="margin-top: 0.75rem;">
-        <button class="btn pager-btn" (click)="previousPage()" [disabled]="page() === 0">Previous</button>
-        <button class="btn pager-btn" (click)="nextPage()" [disabled]="isLastPage()">Next</button>
-        <span class="muted">Page {{ page() + 1 }} / {{ totalPages() }}</span>
-        <span class="muted">Total users: {{ pageData()?.total ?? 0 }}</span>
+        <button class="btn pager-btn" (click)="previousPage()" [disabled]="page() === 0">{{ i18n.t('admin.previous') }}</button>
+        <button class="btn pager-btn" (click)="nextPage()" [disabled]="isLastPage()">{{ i18n.t('admin.next') }}</button>
+        <span class="muted">{{ i18n.t('admin.page') }} {{ page() + 1 }} / {{ totalPages() }}</span>
+        <span class="muted">{{ i18n.t('admin.totalUsers') }}: {{ pageData()?.total ?? 0 }}</span>
       </div>
     </section>
   `,
   styles: [`
     /* ... existing styles ... */
     .btn-danger {
-      background-color: #dc3545;
+      background-color: var(--color-error);
       color: white;
       border: none;
       padding: 4px 8px;
@@ -87,13 +88,15 @@ import { CognitoUserPage, GraphqlApiService } from '../services/graphql-api.serv
       border-radius: 4px;
     }
     .btn-danger:hover {
-      background-color: #bb2d3b;
+      background-color: var(--color-error);
+      filter: brightness(0.85);
     }
   `]
 })
 export class AdminUsersPageComponent implements OnInit {
   private readonly api = inject(GraphqlApiService);
   private readonly router = inject(Router);
+  protected readonly i18n = inject(I18nService);
 
   protected readonly pageData = signal<CognitoUserPage | null>(null);
   protected readonly error = signal('');
@@ -153,7 +156,7 @@ export class AdminUsersPageComponent implements OnInit {
   }
 
   protected deleteUser(user: { username: string; email: string }): void {
-    if (confirm(`Are you sure you want to delete ${user.username} (${user.email})?`)) {
+    if (confirm(this.i18n.t('admin.deleteConfirm', { username: user.username, email: user.email }))) {
       this.loading.set(true);
       this.api.deleteUser(user.username).subscribe({
         next: () => {
