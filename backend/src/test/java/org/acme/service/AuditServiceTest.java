@@ -16,11 +16,9 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -34,7 +32,7 @@ class AuditServiceTest {
     private final DynamoDbTable<AuditLog> mockTable = mock(DynamoDbTable.class);
 
     @BeforeEach
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     void setUp() throws Exception {
         DynamoDbEnhancedClient mockClient = mock(DynamoDbEnhancedClient.class);
         when(mockClient.table(any(String.class), any())).thenReturn((DynamoDbTable) mockTable);
@@ -176,9 +174,9 @@ class AuditServiceTest {
     }
 
     @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
     void initCreatesTable() throws Exception {
         DynamoDbEnhancedClient mockClient = mock(DynamoDbEnhancedClient.class);
-        @SuppressWarnings("unchecked")
         DynamoDbTable<AuditLog> table = mock(DynamoDbTable.class);
         when(mockClient.table(any(String.class), any())).thenReturn((DynamoDbTable) table);
 
@@ -189,9 +187,9 @@ class AuditServiceTest {
     }
 
     @Test
+    @SuppressWarnings({"unchecked", "rawtypes"})
     void initHandlesTableAlreadyExists() throws Exception {
         DynamoDbEnhancedClient mockClient = mock(DynamoDbEnhancedClient.class);
-        @SuppressWarnings("unchecked")
         DynamoDbTable<AuditLog> table = mock(DynamoDbTable.class);
         when(mockClient.table(any(String.class), any())).thenReturn((DynamoDbTable) table);
         doThrow(new RuntimeException("Table already exists")).when(table).createTable();
