@@ -19,6 +19,8 @@ import java.util.Set;
 @Authenticated
 public class SocialGraphQLResource {
 
+    private static final String ENTITY_COMMENT = "COMMENT";
+
     private final VoteService voteService;
     private final CommentService commentService;
     private final NotificationService notificationService;
@@ -69,7 +71,7 @@ public class SocialGraphQLResource {
                                @Name("content") String content) {
         String userId = identity.getPrincipal().getName();
         Comment created = commentService.addComment(entityType, entityId, userId, content);
-        auditService.log("CREATE", "COMMENT", created.getId(), userId, "Commented on " + entityType + " " + entityId);
+        auditService.log("CREATE", ENTITY_COMMENT, created.getId(), userId, "Commented on " + entityType + " " + entityId);
         return created;
     }
 
@@ -79,7 +81,7 @@ public class SocialGraphQLResource {
         String userId = identity.getPrincipal().getName();
         Set<String> roles = identity.getRoles();
         Comment reply = commentService.addReply(commentId, userId, content, roles);
-        auditService.log("REPLY", "COMMENT", commentId, userId, "Replied to comment");
+        auditService.log("REPLY", ENTITY_COMMENT, commentId, userId, "Replied to comment");
         return reply;
     }
 
@@ -89,7 +91,7 @@ public class SocialGraphQLResource {
         Set<String> roles = identity.getRoles();
         Boolean result = commentService.deleteComment(commentId, userId, roles);
         if (Boolean.TRUE.equals(result)) {
-            auditService.log("DELETE", "COMMENT", commentId, userId, "Deleted comment");
+            auditService.log("DELETE", ENTITY_COMMENT, commentId, userId, "Deleted comment");
         }
         return result;
     }
@@ -99,7 +101,7 @@ public class SocialGraphQLResource {
                                 @Name("content") String content) {
         String userId = identity.getPrincipal().getName();
         Comment edited = commentService.editComment(commentId, userId, content);
-        auditService.log("UPDATE", "COMMENT", commentId, userId, "Edited comment");
+        auditService.log("UPDATE", ENTITY_COMMENT, commentId, userId, "Edited comment");
         return edited;
     }
 

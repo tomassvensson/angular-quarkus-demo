@@ -247,22 +247,22 @@ Quarkus properties can be overridden via environment variables. Common ones:
 Create/use a Cognito User Pool and App Client with:
 
 1. **OAuth flow**: Authorization code grant
-2. **Scopes**: at least `openid`, `email`
-3. **Identity provider**: Cognito user pool directory
-4. **Allowed callback URLs** (local):
-  - `http://localhost:8080/login`
-  - `http://localhost:8080/login/oauth2/code/cognito` (optional compatibility)
-  - `http://localhost:8081/login` (for tests)
-  - `http://localhost:8081/login/oauth2/code/cognito` (optional compatibility)
-5. **Allowed sign-out URLs**:
-  - `http://localhost:4200/`
-  - `http://localhost:8080/`
-  - `http://localhost:8081/`
-6. Create groups used by the app:
-  - `RegularUser`
-  - `AdminUser`
-  - `OwnerUser`
-  - `NoPermissionsTestUser`
+1. **Scopes**: at least `openid`, `email`
+1. **Identity provider**: Cognito user pool directory
+1. **Allowed callback URLs** (local):
+    - `http://localhost:8080/login`
+    - `http://localhost:8080/login/oauth2/code/cognito` (optional compatibility)
+    - `http://localhost:8081/login` (for tests)
+    - `http://localhost:8081/login/oauth2/code/cognito` (optional compatibility)
+1. **Allowed sign-out URLs**:
+    - `http://localhost:4200/`
+    - `http://localhost:8080/`
+    - `http://localhost:8081/`
+1. Create groups used by the app:
+    - `RegularUser`
+    - `AdminUser`
+    - `OwnerUser`
+    - `NoPermissionsTestUser`
 
 ## Run Locally
 
@@ -373,17 +373,17 @@ npx playwright install chromium
 You can run almost the same pipeline locally to avoid wasting GitHub minutes:
 
 1. Run the same commands locally:
-  - backend build: `cd backend && ./mvnw -DskipTests package`
-  - backend tests: `cd backend && ./mvnw test`
-  - frontend build: `cd frontend && npm ci && npm run build`
-  - frontend tests: `cd frontend && npm test -- --watch=false`
-  - frontend e2e: `cd frontend && npm run e2e`
+    - backend build: `cd backend && ./mvnw -DskipTests package`
+    - backend tests: `cd backend && ./mvnw test`
+    - frontend build: `cd frontend && npm ci && npm run build`
+    - frontend tests: `cd frontend && npm test -- --watch=false`
+    - frontend e2e: `cd frontend && npm run e2e`
 
-2. Run LocalStack-backed backend test prep locally:
-  - `docker compose -f .github/localstack/docker-compose.localstack.yml up -d`
-  - `bash .github/localstack/seed-localstack.sh`
+1. Run LocalStack-backed backend test prep locally:
+    - `docker compose -f .github/localstack/docker-compose.localstack.yml up -d`
+    - `bash .github/localstack/seed-localstack.sh`
 
-3. Optional: run GitHub workflows locally with `act`:
+1. Optional: run GitHub workflows locally with `act`:
   - install [`act`](https://github.com/nektos/act)
   - run specific workflow, for example:
     - `act push -W .github/workflows/backend-tests.yml`
