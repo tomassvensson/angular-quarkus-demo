@@ -1,9 +1,7 @@
 # Cognito Module
-
-<!-- BEGIN_TF_DOCS -->
-Creates an AWS Cognito User Pool with user groups and app client
-for the Angular Quarkus demo application.
-<!-- END_TF_DOCS -->
+#
+# Creates an AWS Cognito User Pool with user groups and app client
+# for the Angular Quarkus demo application.
 
 variable "project_name" {
   description = "Project name prefix for resource naming"
