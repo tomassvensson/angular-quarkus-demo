@@ -164,7 +164,7 @@ export class AdminUsersPageComponent implements OnInit {
         },
         error: (err) => {
           this.loading.set(false);
-          this.error.set(err.message || 'Could not delete user');
+          this.error.set(err.message || this.i18n.t('error.couldNotDeleteUser'));
         }
       });
     }
@@ -197,7 +197,7 @@ export class AdminUsersPageComponent implements OnInit {
           this.router.navigate(['/']);
           return;
         }
-        this.error.set(err.message || 'Could not load users');
+        this.error.set(err.message || this.i18n.t('error.couldNotLoadUsers'));
       }
     });
   }

@@ -11,7 +11,7 @@ import { I18nService } from '../services/i18n.service';
           <button
             class="star-btn"
             type="button"
-            [attr.aria-label]="'Rate ' + star + ' star' + (star > 1 ? 's' : '')"
+            [attr.aria-label]="star > 1 ? i18n.t('a11y.rateStars', { count: '' + star }) : i18n.t('a11y.rateStar', { count: '' + star })"
             [class.interactive]="interactive()"
             (click)="onStarClick(star)"
             (mouseenter)="onHover(star)"
@@ -103,7 +103,8 @@ export class StarRatingComponent {
   protected readonly ariaLabel = computed(() => {
     const avg = this.averageRating();
     const count = this.voteCount();
-    return `Rating: ${avg.toFixed(1)} out of 5 stars from ${count} vote${count === 1 ? '' : 's'}`;
+    const votes = count === 1 ? this.i18n.t('rating.vote') : this.i18n.t('rating.votes');
+    return this.i18n.t('a11y.ratingDescription', { avg: avg.toFixed(1), count: '' + count, votes });
   });
 
   protected getStarFillPercent(star: number): number {

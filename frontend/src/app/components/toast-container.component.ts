@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ToastService, ToastType } from '../services/toast.service';
+import { I18nService } from '../services/i18n.service';
 
 @Component({
   selector: 'app-toast-container',
@@ -12,7 +13,7 @@ import { ToastService, ToastType } from '../services/toast.service';
             <span class="toast-icon">{{ iconFor(toast.type) }}</span>
             <span class="toast-message">{{ toast.message }}</span>
             <button class="toast-close" (click)="toastService.dismiss(toast.id)"
-                    aria-label="Dismiss notification">&times;</button>
+                    [attr.aria-label]="i18n.t('a11y.dismissNotification')">&times;</button>
           </div>
         }
       </div>
@@ -94,6 +95,7 @@ import { ToastService, ToastType } from '../services/toast.service';
 })
 export class ToastContainerComponent {
   protected readonly toastService = inject(ToastService);
+  protected readonly i18n = inject(I18nService);
 
   iconFor(type: ToastType): string {
     switch (type) {

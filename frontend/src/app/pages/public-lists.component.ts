@@ -49,7 +49,7 @@ import { I18nService } from '../services/i18n.service';
             (click)="previousPage()"
             [disabled]="page() === 0"
             class="px-3 py-1 rounded border disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 cursor-pointer">
-            Previous
+            {{ i18n.t('publicLists.previous') }}
           </button>
           <span class="text-sm text-gray-600">
             {{ i18n.t('publicLists.page') }} {{ page() + 1 }} {{ i18n.t('publicLists.of') }} {{ totalPages() }}
@@ -60,7 +60,7 @@ import { I18nService } from '../services/i18n.service';
             (click)="nextPage()"
             [disabled]="isLastPage()"
             class="px-3 py-1 rounded border disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 cursor-pointer">
-            Next
+            {{ i18n.t('publicLists.next') }}
           </button>
         </nav>
       }

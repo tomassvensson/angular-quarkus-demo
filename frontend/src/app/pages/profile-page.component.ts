@@ -493,7 +493,7 @@ export class ProfilePageComponent implements OnInit {
             },
             error: (err) => {
                 this.loading.set(false);
-                this.error.set(err.message || 'Could not delete account');
+                this.error.set(err.message || this.i18n.t('error.couldNotDeleteAccount'));
             }
         });
     }

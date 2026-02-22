@@ -60,7 +60,7 @@ import { I18nService } from '../services/i18n.service';
             (click)="previousPage()"
             [disabled]="page() === 0"
             class="px-3 py-1 rounded border disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 cursor-pointer">
-            Previous
+            {{ i18n.t('publicLists.previous') }}
           </button>
           <span class="text-sm text-gray-600">
             {{ i18n.t('publicLists.page') }} {{ page() + 1 }} {{ i18n.t('publicLists.of') }} {{ totalPages() }}
@@ -69,7 +69,7 @@ import { I18nService } from '../services/i18n.service';
             (click)="nextPage()"
             [disabled]="page() >= totalPages() - 1"
             class="px-3 py-1 rounded border disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-100 cursor-pointer">
-            Next
+            {{ i18n.t('publicLists.next') }}
           </button>
         </nav>
       }
@@ -179,8 +179,9 @@ export class NotificationsPageComponent implements OnInit {
   }
 
   protected notificationAriaLabel(n: Notification): string {
-    const readStatus = n.read ? 'Read' : 'Unread';
-    return `${readStatus}: ${n.actorUsername} ${n.type === 'COMMENT' ? 'commented' : 'replied'}: ${this.truncate(n.preview, 50)}`;
+    const readStatus = n.read ? this.i18n.t('a11y.readStatus') : this.i18n.t('a11y.unreadStatus');
+    const action = n.type === 'COMMENT' ? this.i18n.t('notifications.commentedOn') : this.i18n.t('notifications.repliedOn');
+    return `${readStatus}: ${n.actorUsername} ${action}: ${this.truncate(n.preview, 50)}`;
   }
 
   private loadPage(): void {

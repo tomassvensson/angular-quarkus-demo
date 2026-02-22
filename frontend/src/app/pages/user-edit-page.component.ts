@@ -109,7 +109,7 @@ export class UserEditPageComponent implements OnInit {
             globalThis.location.assign('/');
             return;
           }
-          this.error.set(err.message || 'Could not save user');
+          this.error.set(err.message || this.i18n.t('error.couldNotSaveUser'));
         }
       });
   }
@@ -157,7 +157,7 @@ export class UserEditPageComponent implements OnInit {
           globalThis.location.assign('/');
           return;
         }
-        this.error.set(err.message || 'Could not load user');
+        this.error.set(err.message || this.i18n.t('error.couldNotLoadUser'));
         this.loading.set(false);
       }
     });
