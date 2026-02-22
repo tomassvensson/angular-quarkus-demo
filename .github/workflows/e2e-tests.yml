@@ -55,7 +55,7 @@ jobs:
       - name: Start Quarkus Backend
         working-directory: backend
         run: |
-          java -javaagent:../jacocoagent.jar=destfile=target/jacoco-e2e.exec,append=false,output=file -Dquarkus.profile=dev -jar target/quarkus-app/quarkus-run.jar &
+          java -javaagent:../jacocoagent.jar=destfile=target/jacoco-e2e.exec,append=false,output=file -Dquarkus.profile=dev -Dapp.seed-data=false -jar target/quarkus-app/quarkus-run.jar &
           echo $! > backend.pid
 
       - name: Wait for Backend

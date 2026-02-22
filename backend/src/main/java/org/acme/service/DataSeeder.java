@@ -38,15 +38,14 @@ public class DataSeeder {
             return;
         }
 
-        // Only seed if tables are empty
-        if (!linkService.getPublishedLists().isEmpty() || !linkService.getListsByOwner("admin.user").isEmpty()) {
-            LOG.info("Data already exists, skipping seed");
-            return;
-        }
-
-        LOG.info("Seeding sample data for manual testing...");
-
         try {
+            // Only seed if tables are empty
+            if (!linkService.getPublishedLists().isEmpty() || !linkService.getListsByOwner("admin.user").isEmpty()) {
+                LOG.info("Data already exists, skipping seed");
+                return;
+            }
+
+            LOG.info("Seeding sample data for manual testing...");
             seedData();
             LOG.info("Sample data seeded successfully");
         } catch (Exception e) {
