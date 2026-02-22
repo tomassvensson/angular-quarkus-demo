@@ -52,6 +52,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -59,8 +60,21 @@ public class CognitoAdminService {
 
     private static final String ATTR_EMAIL = "email";
     private static final String AUTH_PARAM_USERNAME = "USERNAME";
+    private static final String GROUP_ADMIN = "AdminUser";
+    private static final String GROUP_REGULAR = "RegularUser";
     private static final String KEYCLOAK_MOCK_SUFFIX = " (keycloak mock)";
+    private static final String STATUS_ENABLED = "Enabled";
     private static final Logger LOG = Logger.getLogger(CognitoAdminService.class);
+    private static final long CACHE_TTL_MS = 30_000; // 30-second cache for user list
+
+    // Cache for user list to avoid re-fetching from Cognito on every page/sort request
+    private final Map<String, CachedUserList> userListCache = new ConcurrentHashMap<>();
+
+    private record CachedUserList(List<CognitoUserView> users, long expiresAt) {
+        boolean isExpired() {
+            return System.currentTimeMillis() > expiresAt;
+        }
+    }
 
     @ConfigProperty(name = "aws.region")
     String awsRegion;
@@ -91,22 +105,47 @@ public class CognitoAdminService {
         int safePage = Math.max(0, page);
         int safeSize = Math.clamp(size, 1, 100);
 
-        List<CognitoUserView> all = fetchAllUsers();
+        List<CognitoUserView> all = getCachedUsers();
         Comparator<CognitoUserView> comparator = comparatorFor(sortBy);
         if ("desc".equalsIgnoreCase(direction)) {
             comparator = comparator.reversed();
         }
+        all = new ArrayList<>(all);
         all.sort(comparator);
 
         int fromIndex = Math.min(safePage * safeSize, all.size());
         int toIndex = Math.min(fromIndex + safeSize, all.size());
+        boolean hasNextPage = toIndex < all.size();
 
         CognitoUserPage result = new CognitoUserPage();
         result.setItems(all.subList(fromIndex, toIndex));
         result.setPage(safePage);
         result.setSize(safeSize);
         result.setTotal(all.size());
+        // Cursor encodes the next page offset for efficient pagination
+        result.setCursor(hasNextPage ? String.valueOf(safePage + 1) : null);
         return result;
+    }
+
+    /**
+     * Get users from cache, fetching from Cognito only if cache is expired or empty.
+     */
+    private List<CognitoUserView> getCachedUsers() {
+        String cacheKey = "allUsers";
+        CachedUserList cached = userListCache.get(cacheKey);
+        if (cached != null && !cached.isExpired()) {
+            return cached.users();
+        }
+        List<CognitoUserView> users = fetchAllUsers();
+        userListCache.put(cacheKey, new CachedUserList(users, System.currentTimeMillis() + CACHE_TTL_MS));
+        return users;
+    }
+
+    /**
+     * Invalidate the user list cache (call after user mutations).
+     */
+    public void invalidateUserCache() {
+        userListCache.clear();
     }
 
     public CognitoUserView getUser(String username) {
@@ -116,11 +155,11 @@ public class CognitoAdminService {
              view.setUsername(username);
              view.setEmail(username + "@example.com");
              view.setEnabled(true);
-             view.setStatus("Enabled");
+             view.setStatus(STATUS_ENABLED);
              if ("admin".equalsIgnoreCase(username) || "admin@example.com".equalsIgnoreCase(username)) {
-                 view.setGroups(List.of("AdminUser", "RegularUser"));
+                 view.setGroups(List.of(GROUP_ADMIN, GROUP_REGULAR));
              } else {
-                 view.setGroups(List.of("RegularUser"));
+                 view.setGroups(List.of(GROUP_REGULAR));
              }
              return view;
         }
@@ -516,15 +555,15 @@ public class CognitoAdminService {
         admin.setUsername("admin");
         admin.setEmail("admin@example.com");
         admin.setEnabled(true);
-        admin.setStatus("Enabled");
-        admin.setGroups(List.of("AdminUser", "RegularUser"));
+        admin.setStatus(STATUS_ENABLED);
+        admin.setGroups(List.of(GROUP_ADMIN, GROUP_REGULAR));
 
         CognitoUserView user = new CognitoUserView();
         user.setUsername("user");
         user.setEmail("user@example.com");
         user.setEnabled(true);
-        user.setStatus("Enabled");
-        user.setGroups(List.of("RegularUser"));
+        user.setStatus(STATUS_ENABLED);
+        user.setGroups(List.of(GROUP_REGULAR));
 
         return new ArrayList<>(List.of(admin, user));
     }
@@ -565,7 +604,7 @@ public class CognitoAdminService {
         view.setEmailVerified(parseBoolean(attributeValue(user.userAttributes(), "email_verified")));
         view.setConfirmationStatus(user.userStatusAsString());
         view.setEnabled(Boolean.TRUE.equals(user.enabled()));
-        view.setStatus(view.isEnabled() ? "Enabled" : "Disabled");
+        view.setStatus(view.isEnabled() ? STATUS_ENABLED : "Disabled");
         view.setCreated(user.userCreateDate());
         view.setLastUpdatedTime(user.userLastModifiedDate());
         view.setModified(user.userLastModifiedDate());

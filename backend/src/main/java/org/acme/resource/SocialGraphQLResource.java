@@ -4,6 +4,7 @@ import jakarta.inject.Inject;
 import org.acme.graphql.model.NotificationPage;
 import org.acme.graphql.model.VoteStats;
 import org.acme.model.Comment;
+import org.acme.service.AuditService;
 import org.acme.service.CommentService;
 import org.acme.service.NotificationService;
 import org.acme.service.VoteService;
@@ -22,14 +23,17 @@ public class SocialGraphQLResource {
     private final CommentService commentService;
     private final NotificationService notificationService;
     private final SecurityIdentity identity;
+    private final AuditService auditService;
 
     @Inject
     public SocialGraphQLResource(VoteService voteService, CommentService commentService,
-                                  NotificationService notificationService, SecurityIdentity identity) {
+                                  NotificationService notificationService, SecurityIdentity identity,
+                                  AuditService auditService) {
         this.voteService = voteService;
         this.commentService = commentService;
         this.notificationService = notificationService;
         this.identity = identity;
+        this.auditService = auditService;
     }
 
     // ========== Voting ==========
@@ -39,7 +43,9 @@ public class SocialGraphQLResource {
                           @Name("entityId") String entityId,
                           @Name("rating") int rating) {
         String userId = identity.getPrincipal().getName();
-        return voteService.vote(entityType, entityId, userId, rating);
+        VoteStats result = voteService.vote(entityType, entityId, userId, rating);
+        auditService.log("VOTE", entityType, entityId, userId, "Rated " + rating + " stars");
+        return result;
     }
 
     @Query("voteStats")
@@ -62,7 +68,9 @@ public class SocialGraphQLResource {
                                @Name("entityId") String entityId,
                                @Name("content") String content) {
         String userId = identity.getPrincipal().getName();
-        return commentService.addComment(entityType, entityId, userId, content);
+        Comment created = commentService.addComment(entityType, entityId, userId, content);
+        auditService.log("CREATE", "COMMENT", created.getId(), userId, "Commented on " + entityType + " " + entityId);
+        return created;
     }
 
     @Mutation("addReply")
@@ -70,21 +78,29 @@ public class SocialGraphQLResource {
                              @Name("content") String content) {
         String userId = identity.getPrincipal().getName();
         Set<String> roles = identity.getRoles();
-        return commentService.addReply(commentId, userId, content, roles);
+        Comment reply = commentService.addReply(commentId, userId, content, roles);
+        auditService.log("REPLY", "COMMENT", commentId, userId, "Replied to comment");
+        return reply;
     }
 
     @Mutation("deleteComment")
     public Boolean deleteComment(@Name("commentId") String commentId) {
         String userId = identity.getPrincipal().getName();
         Set<String> roles = identity.getRoles();
-        return commentService.deleteComment(commentId, userId, roles);
+        Boolean result = commentService.deleteComment(commentId, userId, roles);
+        if (Boolean.TRUE.equals(result)) {
+            auditService.log("DELETE", "COMMENT", commentId, userId, "Deleted comment");
+        }
+        return result;
     }
 
     @Mutation("editComment")
     public Comment editComment(@Name("commentId") String commentId,
                                 @Name("content") String content) {
         String userId = identity.getPrincipal().getName();
-        return commentService.editComment(commentId, userId, content);
+        Comment edited = commentService.editComment(commentId, userId, content);
+        auditService.log("UPDATE", "COMMENT", commentId, userId, "Edited comment");
+        return edited;
     }
 
     // ========== Notifications ==========

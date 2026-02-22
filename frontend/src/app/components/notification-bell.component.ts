@@ -2,16 +2,17 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit, O
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SocialService } from '../services/social.service';
+import { I18nService } from '../services/i18n.service';
 
 @Component({
   selector: 'app-notification-bell',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink],
   template: `
-    <a routerLink="/notifications" class="bell-link" aria-label="Notifications">
+    <a routerLink="/notifications" class="bell-link" [attr.aria-label]="i18n.t('a11y.notifications')">
       <span class="bell-icon" aria-hidden="true">&#128276;</span>
       @if (unreadCount() > 0) {
-        <span class="badge" aria-label="unread notifications">{{ displayCount() }}</span>
+        <span class="badge" [attr.aria-label]="i18n.t('a11y.unreadNotifications', { count: '' + unreadCount() })">{{ displayCount() }}</span>
       }
     </a>
   `,
@@ -48,6 +49,7 @@ import { SocialService } from '../services/social.service';
 export class NotificationBellComponent implements OnInit, OnDestroy {
   private readonly socialService = inject(SocialService);
   private readonly platformId = inject(PLATFORM_ID);
+  protected readonly i18n = inject(I18nService);
   private pollInterval: ReturnType<typeof setInterval> | null = null;
 
   readonly unreadCount = signal(0);

@@ -78,7 +78,9 @@ public class UserGraphQLApi {
     @Mutation("updateUser")
     @RolesAllowed({ADMIN_ROLE, AWS_ADMIN_ROLE})
     public CognitoUserView updateUser(UpdateUserInput input) {
-        return cognitoAdminService.updateUser(input);
+        CognitoUserView result = cognitoAdminService.updateUser(input);
+        cognitoAdminService.invalidateUserCache();
+        return result;
     }
 
     @Mutation("deleteUser")
@@ -91,7 +93,11 @@ public class UserGraphQLApi {
                 throw new SecurityException("You are not authorized to delete this user.");
             }
         }
-        return cognitoAdminService.deleteUser(username);
+        boolean deleted = cognitoAdminService.deleteUser(username);
+        if (deleted) {
+            cognitoAdminService.invalidateUserCache();
+        }
+        return deleted;
     }
 
     @Mutation("changePassword")

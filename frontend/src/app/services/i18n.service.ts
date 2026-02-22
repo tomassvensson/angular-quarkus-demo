@@ -199,6 +199,32 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'common.delete': 'Delete',
     'common.yes': 'Yes',
     'common.no': 'No',
+    'common.couldNotLoad': 'Could not load data',
+    'common.couldNotSave': 'Could not save data',
+
+    // Accessibility
+    'a11y.writeComment': 'Write a comment',
+    'a11y.editComment': 'Edit your comment',
+    'a11y.editReply': 'Edit your reply',
+    'a11y.replyTo': 'Reply to comment by {user}',
+    'a11y.rateStar': 'Rate {count} star',
+    'a11y.rateStars': 'Rate {count} stars',
+    'a11y.ratingDescription': 'Rating: {avg} out of 5 stars from {count} {votes}',
+    'a11y.notifications': 'Notifications',
+    'a11y.unreadNotifications': '{count} unread notifications',
+    'a11y.dismissNotification': 'Dismiss notification',
+    'a11y.readStatus': 'Read',
+    'a11y.unreadStatus': 'Unread',
+
+    // Error messages
+    'error.couldNotDeleteUser': 'Could not delete user',
+    'error.couldNotLoadUsers': 'Could not load users',
+    'error.couldNotSaveUser': 'Could not save user',
+    'error.couldNotLoadUser': 'Could not load user',
+    'error.couldNotDeleteAccount': 'Could not delete account',
+
+    // List Detail extra
+    'listDetail.added': 'Added:',
   },
 
   de: {
@@ -384,6 +410,32 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'common.delete': 'Löschen',
     'common.yes': 'Ja',
     'common.no': 'Nein',
+    'common.couldNotLoad': 'Daten konnten nicht geladen werden',
+    'common.couldNotSave': 'Daten konnten nicht gespeichert werden',
+
+    // Accessibility
+    'a11y.writeComment': 'Kommentar schreiben',
+    'a11y.editComment': 'Kommentar bearbeiten',
+    'a11y.editReply': 'Antwort bearbeiten',
+    'a11y.replyTo': 'Auf Kommentar von {user} antworten',
+    'a11y.rateStar': '{count} Stern bewerten',
+    'a11y.rateStars': '{count} Sterne bewerten',
+    'a11y.ratingDescription': 'Bewertung: {avg} von 5 Sternen aus {count} {votes}',
+    'a11y.notifications': 'Benachrichtigungen',
+    'a11y.unreadNotifications': '{count} ungelesene Benachrichtigungen',
+    'a11y.dismissNotification': 'Benachrichtigung schließen',
+    'a11y.readStatus': 'Gelesen',
+    'a11y.unreadStatus': 'Ungelesen',
+
+    // Error messages
+    'error.couldNotDeleteUser': 'Benutzer konnte nicht gelöscht werden',
+    'error.couldNotLoadUsers': 'Benutzer konnten nicht geladen werden',
+    'error.couldNotSaveUser': 'Benutzer konnte nicht gespeichert werden',
+    'error.couldNotLoadUser': 'Benutzer konnte nicht geladen werden',
+    'error.couldNotDeleteAccount': 'Konto konnte nicht gelöscht werden',
+
+    // List Detail extra
+    'listDetail.added': 'Hinzugefügt:',
   },
 
   se: {
@@ -569,6 +621,32 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'common.delete': 'Radera',
     'common.yes': 'Ja',
     'common.no': 'Nej',
+    'common.couldNotLoad': 'Kunde inte ladda data',
+    'common.couldNotSave': 'Kunde inte spara data',
+
+    // Accessibility
+    'a11y.writeComment': 'Skriv en kommentar',
+    'a11y.editComment': 'Redigera din kommentar',
+    'a11y.editReply': 'Redigera ditt svar',
+    'a11y.replyTo': 'Svara på kommentar av {user}',
+    'a11y.rateStar': 'Betygsätt {count} stjärna',
+    'a11y.rateStars': 'Betygsätt {count} stjärnor',
+    'a11y.ratingDescription': 'Betyg: {avg} av 5 stjärnor från {count} {votes}',
+    'a11y.notifications': 'Notiser',
+    'a11y.unreadNotifications': '{count} olästa notiser',
+    'a11y.dismissNotification': 'Stäng notis',
+    'a11y.readStatus': 'Läst',
+    'a11y.unreadStatus': 'Oläst',
+
+    // Error messages
+    'error.couldNotDeleteUser': 'Kunde inte radera användare',
+    'error.couldNotLoadUsers': 'Kunde inte ladda användare',
+    'error.couldNotSaveUser': 'Kunde inte spara användare',
+    'error.couldNotLoadUser': 'Kunde inte ladda användare',
+    'error.couldNotDeleteAccount': 'Kunde inte radera konto',
+
+    // List Detail extra
+    'listDetail.added': 'Tillagd:',
   }
 };
 

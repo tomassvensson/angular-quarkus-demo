@@ -1,0 +1,7 @@
+# ZAP Baseline Scan Rules Configuration
+# Format: ruleId	action	name
+# Actions: IGNORE, WARN, FAIL
+# IGNORE rules that are expected in dev/CI environment
+10035	IGNORE	Strict-Transport-Security Header Not Set
+10098	IGNORE	Cross-Domain Misconfiguration
+10049	IGNORE	Storable and Cacheable Content

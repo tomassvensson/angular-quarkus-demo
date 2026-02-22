@@ -8,11 +8,12 @@ import { I18nService } from './services/i18n.service';
 import { NotificationBellComponent } from './components/notification-bell.component';
 import { ThemeToggleComponent } from './components/theme-toggle.component';
 import { LanguageSelectorComponent } from './components/language-selector.component';
+import { ToastContainerComponent } from './components/toast-container.component';
 
 @Component({
   selector: 'app-root',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationBellComponent, ThemeToggleComponent, LanguageSelectorComponent],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, NotificationBellComponent, ThemeToggleComponent, LanguageSelectorComponent, ToastContainerComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

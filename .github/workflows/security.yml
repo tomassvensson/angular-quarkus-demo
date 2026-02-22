@@ -103,7 +103,7 @@ jobs:
         if: ${{ env.SONAR_TOKEN != '' }}
         run: |
           java -javaagent:../jacocoagent.jar=destfile=target/jacoco-e2e.exec,append=false,output=file \
-            -Dquarkus.profile=dev -jar target/quarkus-app/quarkus-run.jar &
+            -Dquarkus.profile=dev -Dapp.seed-data=false -jar target/quarkus-app/quarkus-run.jar &
           echo $! > backend.pid
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

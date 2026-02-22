@@ -83,7 +83,7 @@ import { I18nService } from '../services/i18n.service';
                   {{ link.title }}
                 </a>
                 <div class="text-xs" style="color: var(--color-text-muted)">
-                    {{ link.url }} <span class="mx-1">•</span> Added: {{ link.createdAt | date:'short' }}
+                    {{ link.url }} <span class="mx-1">•</span> {{ i18n.t('listDetail.added') }} {{ link.createdAt | date:'short' }}
                 </div>
                 @if (linkVoteStats()[link.id]; as lvs) {
                   <div class="mt-1">

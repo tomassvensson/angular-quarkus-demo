@@ -27,6 +27,7 @@ export interface CognitoUserPage {
   page: number;
   size: number;
   total: number;
+  cursor: string | null;
 }
 
 export interface TrustedDevice {
@@ -63,6 +64,7 @@ export class GraphqlApiService {
         page
         size
         total
+        cursor
         items {
           username
           email
