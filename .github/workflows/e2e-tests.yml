@@ -78,6 +78,25 @@ jobs:
           path: frontend/test-results/
           retention-days: 7
 
+      - name: OWASP ZAP DAST Baseline Scan
+        if: ${{ !cancelled() }}
+        uses: zaproxy/action-baseline@af93a6e3b22be99f0e56b7e52e35edfeee30f2fa # v0.14.0
+        with:
+          target: 'http://localhost:8080'
+          rules_file_name: '.github/zap/rules.tsv'
+          cmd_options: '-a -j -l WARN'
+          allow_issue_writing: false
+          fail_action: false
+          artifact_name: 'zap-dast-report'
+
+      - name: Upload ZAP Report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: ${{ !cancelled() }}
+        with:
+          name: zap-dast-report-html
+          path: report_html.html
+          retention-days: 14
+
       - name: Stop Backend and Generate Coverage
         if: always()
         working-directory: backend
