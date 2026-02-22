@@ -26,7 +26,9 @@ class SecurityHeadersFilterTest {
                         equalTo(SecurityHeadersFilter.CONTENT_SECURITY_POLICY))
                 .header("Permissions-Policy",
                         equalTo("camera=(), microphone=(), geolocation=()"))
-                .header("Cross-Origin-Resource-Policy", equalTo("same-origin"));
+                .header("Cross-Origin-Resource-Policy", equalTo("same-origin"))
+                .header("Cross-Origin-Embedder-Policy", equalTo("unsafe-none"))
+                .header("Cross-Origin-Opener-Policy", equalTo("same-origin"));
     }
 
     @Test
@@ -41,7 +43,9 @@ class SecurityHeadersFilterTest {
                         equalTo(SecurityHeadersFilter.CONTENT_SECURITY_POLICY))
                 .header("Permissions-Policy",
                         equalTo("camera=(), microphone=(), geolocation=()"))
-                .header("Cross-Origin-Resource-Policy", equalTo("same-origin"));
+                .header("Cross-Origin-Resource-Policy", equalTo("same-origin"))
+                .header("Cross-Origin-Embedder-Policy", equalTo("unsafe-none"))
+                .header("Cross-Origin-Opener-Policy", equalTo("same-origin"));
     }
 
     @Test
@@ -58,6 +62,8 @@ class SecurityHeadersFilterTest {
                         equalTo(SecurityHeadersFilter.CONTENT_SECURITY_POLICY))
                 .header("Permissions-Policy",
                         equalTo("camera=(), microphone=(), geolocation=()"))
-                .header("Cross-Origin-Resource-Policy", equalTo("same-origin"));
+                .header("Cross-Origin-Resource-Policy", equalTo("same-origin"))
+                .header("Cross-Origin-Embedder-Policy", equalTo("unsafe-none"))
+                .header("Cross-Origin-Opener-Policy", equalTo("same-origin"));
     }
 }
