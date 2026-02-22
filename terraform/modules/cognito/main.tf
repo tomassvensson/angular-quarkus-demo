@@ -1,3 +1,14 @@
+terraform {
+  required_version = ">= 1.5"
+
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
 resource "aws_cognito_user_pool" "main" {
   name = "${var.project_name}-${var.environment}"
 
