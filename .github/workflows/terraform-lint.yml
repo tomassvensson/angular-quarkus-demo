@@ -1,0 +1,61 @@
+name: terraform-lint
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - 'terraform/**'
+  pull_request:
+    branches: ["**"]
+    paths:
+      - 'terraform/**'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [dev, prod]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+        with:
+          terraform_version: "1.12"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive terraform/
+
+      - name: Terraform Init (${{ matrix.environment }})
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: terraform init -backend=false
+
+      - name: Terraform Validate (${{ matrix.environment }})
+        working-directory: terraform/environments/${{ matrix.environment }}
+        run: terraform validate
+
+  tflint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@90f302c255ef959cbfb4bd10581afecdb7ece3e6 # v4.1.1
+        with:
+          tflint_version: latest
+
+      - name: Init TFLint
+        run: tflint --init
+
+      - name: Lint Modules
+        run: |
+          for dir in terraform/modules/*/; do
+            echo "=== Linting $dir ==="
+            tflint --chdir="$dir" --minimum-failure-severity=warning
+          done
