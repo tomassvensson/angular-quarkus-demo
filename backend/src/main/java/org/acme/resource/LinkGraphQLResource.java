@@ -4,6 +4,7 @@ import jakarta.inject.Inject;
 import org.acme.model.Link;
 import org.acme.model.LinkList;
 import org.acme.graphql.model.PublishedListsPage;
+import org.acme.service.AuditService;
 import org.acme.service.LinkService;
 import org.eclipse.microprofile.graphql.*;
 import io.quarkus.security.Authenticated;
@@ -18,11 +19,13 @@ public class LinkGraphQLResource {
 
     private final LinkService linkService;
     private final SecurityIdentity identity;
+    private final AuditService auditService;
 
     @Inject
-    public LinkGraphQLResource(LinkService linkService, SecurityIdentity identity) {
+    public LinkGraphQLResource(LinkService linkService, SecurityIdentity identity, AuditService auditService) {
         this.linkService = linkService;
         this.identity = identity;
+        this.auditService = auditService;
     }
 
     @Query("publishedLists")
@@ -62,7 +65,9 @@ public class LinkGraphQLResource {
     @Mutation("createList")
     public LinkList createList(@Name("name") String name) {
         String owner = identity.getPrincipal().getName();
-        return linkService.createList(owner, name);
+        LinkList created = linkService.createList(owner, name);
+        auditService.log("CREATE", "LIST", created.getId(), owner, "Created list: " + name);
+        return created;
     }
 
     @Mutation("updateList")
@@ -93,13 +98,16 @@ public class LinkGraphQLResource {
         if (!owner.equals(list.getOwner())) throw new SecurityException("Not authorized to delete this list");
         
         linkService.deleteList(id);
+        auditService.log("DELETE", "LIST", id, owner, "Deleted list: " + list.getName());
         return true;
     }
 
     @Mutation("createLink")
     public Link createLink(@Name("url") String url, @Name("title") String title) {
         String owner = identity.getPrincipal().getName();
-        return linkService.createLink(owner, url, title);
+        Link created = linkService.createLink(owner, url, title);
+        auditService.log("CREATE", "LINK", created.getId(), owner, "Created link: " + url);
+        return created;
     }
     
     @Query("link")
@@ -117,6 +125,7 @@ public class LinkGraphQLResource {
         Link link = linkService.createLink(owner, url, title);
         list.getLinkIds().add(link.getId());
         linkService.updateList(list);
+        auditService.log("ADD_LINK", "LIST", listId, owner, "Added link " + link.getId() + " to list");
         return list;
     }
     

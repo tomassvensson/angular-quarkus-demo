@@ -7,6 +7,8 @@ public class CognitoUserPage {
     private int page;
     private int size;
     private long total;
+    /** Cursor for next page, null if no more pages. */
+    private String cursor;
 
     public List<CognitoUserView> getItems() {
         return items;
@@ -38,5 +40,13 @@ public class CognitoUserPage {
 
     public void setTotal(long total) {
         this.total = total;
+    }
+
+    public String getCursor() {
+        return cursor;
+    }
+
+    public void setCursor(String cursor) {
+        this.cursor = cursor;
     }
 }

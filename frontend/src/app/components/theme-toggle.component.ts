@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject, computed } from '@angular/core';
 import { ThemeService, ThemeMode } from '../services/theme.service';
+import { I18nService } from '../services/i18n.service';
 
 @Component({
   selector: 'app-theme-toggle',
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="theme-toggle" role="radiogroup" aria-label="Theme preference">
-      @for (option of options; track option.mode) {
+      @for (option of options(); track option.mode) {
         <button
           type="button"
           class="theme-btn"
@@ -48,14 +49,15 @@ import { ThemeService, ThemeMode } from '../services/theme.service';
 })
 export class ThemeToggleComponent {
   private readonly themeService = inject(ThemeService);
+  protected readonly i18n = inject(I18nService);
 
   readonly currentMode = computed(() => this.themeService.mode());
 
-  readonly options: Array<{ mode: ThemeMode; icon: string; label: string }> = [
-    { mode: 'light', icon: '☀️', label: 'Light mode' },
-    { mode: 'system', icon: '💻', label: 'System default' },
-    { mode: 'dark', icon: '🌙', label: 'Dark mode' }
-  ];
+  readonly options = computed(() => [
+    { mode: 'light' as ThemeMode, icon: '☀️', label: this.i18n.t('theme.light') },
+    { mode: 'system' as ThemeMode, icon: '💻', label: this.i18n.t('theme.system') },
+    { mode: 'dark' as ThemeMode, icon: '🌙', label: this.i18n.t('theme.dark') }
+  ]);
 
   selectMode(mode: ThemeMode): void {
     this.themeService.setMode(mode);

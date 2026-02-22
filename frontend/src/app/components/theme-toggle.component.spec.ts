@@ -29,8 +29,8 @@ describe('ThemeToggleComponent', () => {
   });
 
   it('should have 3 options: light, system, dark', () => {
-    expect(component.options.length).toBe(3);
-    expect(component.options.map(o => o.mode)).toEqual(['light', 'system', 'dark']);
+    expect(component.options().length).toBe(3);
+    expect(component.options().map(o => o.mode)).toEqual(['light', 'system', 'dark']);
   });
 
   it('should reflect the current mode from ThemeService', () => {

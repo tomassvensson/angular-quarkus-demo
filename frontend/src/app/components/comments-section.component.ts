@@ -20,7 +20,7 @@ import { I18nService } from '../services/i18n.service';
             [placeholder]="i18n.t('comments.writePlaceholder')"
             class="comment-input"
             rows="3"
-            [attr.aria-label]="'Write a comment'"></textarea>
+            [attr.aria-label]="i18n.t('a11y.writeComment')"></textarea>
           <button (click)="submitComment()" class="comment-submit-btn" [disabled]="!newCommentText.trim()">
             {{ i18n.t('comments.postComment') }}
           </button>
@@ -50,7 +50,7 @@ import { I18nService } from '../services/i18n.service';
                 [(ngModel)]="editText"
                 class="comment-input"
                 rows="3"
-                [attr.aria-label]="'Edit your comment'"></textarea>
+                [attr.aria-label]="i18n.t('a11y.editComment')"></textarea>
               <div class="reply-actions">
                 <button (click)="saveEdit(comment.id)" class="comment-submit-btn" [disabled]="!editText.trim()">{{ i18n.t('listDetail.save') }}</button>
                 <button (click)="cancelEdit()" class="cancel-btn">{{ i18n.t('listDetail.cancel') }}</button>
@@ -85,7 +85,7 @@ import { I18nService } from '../services/i18n.service';
                         [(ngModel)]="editText"
                         class="comment-input reply-input"
                         rows="2"
-                        [attr.aria-label]="'Edit your reply'"></textarea>
+                        [attr.aria-label]="i18n.t('a11y.editReply')"></textarea>
                       <div class="reply-actions">
                         <button (click)="saveEdit(reply.id)" class="comment-submit-btn" [disabled]="!editText.trim()">{{ i18n.t('listDetail.save') }}</button>
                         <button (click)="cancelEdit()" class="cancel-btn">{{ i18n.t('listDetail.cancel') }}</button>
@@ -107,7 +107,7 @@ import { I18nService } from '../services/i18n.service';
                   [placeholder]="i18n.t('comments.replyPlaceholder')"
                   class="comment-input reply-input"
                   rows="2"
-                  [attr.aria-label]="'Reply to comment by ' + comment.userId"></textarea>
+                  [attr.aria-label]="i18n.t('a11y.replyTo', { user: comment.userId })"></textarea>
                 <div class="reply-actions">
                   <button (click)="submitReply(comment.id)" class="comment-submit-btn" [disabled]="!replyText.trim()">
                     {{ i18n.t('comments.reply') }}

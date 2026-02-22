@@ -172,6 +172,7 @@ Full-stack demo application with:
 ## External Dependencies
 
 Install locally:
+
 - **Java 21**
 - **Node.js 20+** and **npm**
 - **AWS account** with Cognito User Pool configured
@@ -207,11 +208,14 @@ For GitHub Actions CI, AWS cloud access is not required for basic pipeline valid
 ## Configuration
 
 ### Important security note
+
 Do **not** commit real secrets. Use environment variables or profile-local files for:
+
 - Cognito client secret
 - any cloud credentials
 
 ### Required backend settings
+
 These are the key values used by the app:
 
 - `quarkus.oidc.auth-server-url`
@@ -223,6 +227,7 @@ These are the key values used by the app:
 - `app.test.disallowed-usernames` (comma-separated local parts before `@`)
 
 ### Environment variable equivalents
+
 Quarkus properties can be overridden via environment variables. Common ones:
 
 - `QUARKUS_OIDC_AUTH_SERVER_URL`
@@ -245,19 +250,19 @@ Create/use a Cognito User Pool and App Client with:
 2. **Scopes**: at least `openid`, `email`
 3. **Identity provider**: Cognito user pool directory
 4. **Allowed callback URLs** (local):
-	- `http://localhost:8080/login`
-	- `http://localhost:8080/login/oauth2/code/cognito` (optional compatibility)
-	- `http://localhost:8081/login` (for tests)
-	- `http://localhost:8081/login/oauth2/code/cognito` (optional compatibility)
+  - `http://localhost:8080/login`
+  - `http://localhost:8080/login/oauth2/code/cognito` (optional compatibility)
+  - `http://localhost:8081/login` (for tests)
+  - `http://localhost:8081/login/oauth2/code/cognito` (optional compatibility)
 5. **Allowed sign-out URLs**:
-	- `http://localhost:4200/`
-	- `http://localhost:8080/`
-	- `http://localhost:8081/`
+  - `http://localhost:4200/`
+  - `http://localhost:8080/`
+  - `http://localhost:8081/`
 6. Create groups used by the app:
-	- `RegularUser`
-	- `AdminUser`
-	- `OwnerUser`
-	- `NoPermissionsTestUser`
+  - `RegularUser`
+  - `AdminUser`
+  - `OwnerUser`
+  - `NoPermissionsTestUser`
 
 ## Run Locally
 
@@ -287,13 +292,16 @@ Frontend URL: `http://localhost:4200`
 ### 3) Open in browser
 
 Start here:
+
 - `http://localhost:4200`
 
 Login/logout endpoints (backend-handled):
+
 - `http://localhost:8080/login`
 - `http://localhost:8080/logout`
 
 GraphQL endpoint:
+
 - `http://localhost:8080/api/v1/graphql`
 
 ## LocalStack (Optional Local CI-like Testing)
@@ -311,6 +319,7 @@ bash .github/localstack/seed-localstack.sh
 ```
 
 This creates:
+
 - Cognito user pool + app client
 - groups: `RegularUser`, `AdminUser`, `OwnerUser`, `NoPermissionsTestUser`
 - seeded users assigned to groups
@@ -333,6 +342,7 @@ cd backend
 ```
 
 Includes:
+
 - API and integration tests
 - GraphQL smoke test
 - login policy tests
@@ -363,21 +373,21 @@ npx playwright install chromium
 You can run almost the same pipeline locally to avoid wasting GitHub minutes:
 
 1. Run the same commands locally:
-	- backend build: `cd backend && ./mvnw -DskipTests package`
-	- backend tests: `cd backend && ./mvnw test`
-	- frontend build: `cd frontend && npm ci && npm run build`
-	- frontend tests: `cd frontend && npm test -- --watch=false`
-	- frontend e2e: `cd frontend && npm run e2e`
+  - backend build: `cd backend && ./mvnw -DskipTests package`
+  - backend tests: `cd backend && ./mvnw test`
+  - frontend build: `cd frontend && npm ci && npm run build`
+  - frontend tests: `cd frontend && npm test -- --watch=false`
+  - frontend e2e: `cd frontend && npm run e2e`
 
 2. Run LocalStack-backed backend test prep locally:
-	- `docker compose -f .github/localstack/docker-compose.localstack.yml up -d`
-	- `bash .github/localstack/seed-localstack.sh`
+  - `docker compose -f .github/localstack/docker-compose.localstack.yml up -d`
+  - `bash .github/localstack/seed-localstack.sh`
 
 3. Optional: run GitHub workflows locally with `act`:
-	- install `act` (https://github.com/nektos/act)
-	- run specific workflow, for example:
-	  - `act push -W .github/workflows/backend-tests.yml`
-	  - `act push -W .github/workflows/frontend-tests.yml`
+  - install [`act`](https://github.com/nektos/act)
+  - run specific workflow, for example:
+    - `act push -W .github/workflows/backend-tests.yml`
+    - `act push -W .github/workflows/frontend-tests.yml`
 
 Note: `act` and GitHub-hosted runners are similar but not identical; always treat local runs as pre-checks and GitHub as final truth.
 
@@ -391,6 +401,7 @@ Note: `act` and GitHub-hosted runners are similar but not identical; always trea
 ## GitHub CI
 
 Workflow files:
+
 - `.github/workflows/backend-build.yml` — Build backend (Maven package)
 - `.github/workflows/backend-tests.yml` — Backend unit + integration tests
 - `.github/workflows/frontend-build.yml` — Build frontend (Angular SSR)
@@ -405,8 +416,8 @@ They run on every push and pull request and provide separate pass/fail badges.
 - **CSRF strategy**: keep state-changing operations behind authenticated GraphQL calls with cookie session; for production, add explicit CSRF token validation (double-submit or synchronizer token) on mutation routes.
 - **Cookie flags (production expectation)**: `Secure`, `HttpOnly`, `SameSite=Lax` (or `Strict` if UX permits), and TLS-only ingress.
 - **Secrets management**:
-	- local/dev: environment variables and LocalStack SSM for test-only values
-	- production: managed secret store (AWS SSM Parameter Store / Secrets Manager), never checked into repo
+  - local/dev: environment variables and LocalStack SSM for test-only values
+  - production: managed secret store (AWS SSM Parameter Store / Secrets Manager), never checked into repo
 - **Static analysis**: SonarCloud runs on every push for both frontend and backend, checking code quality, security hotspots, and code coverage.
 - **Vulnerability scanning**: Trivy filesystem scan runs in CI to detect known CVEs in dependencies.
 
