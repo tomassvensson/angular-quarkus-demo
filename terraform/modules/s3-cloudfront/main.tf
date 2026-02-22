@@ -192,8 +192,6 @@ resource "aws_cloudfront_distribution" "main" {
 }
 
 # S3 bucket policy for CloudFront OAC
-data "aws_caller_identity" "current" {}
-
 resource "aws_s3_bucket_policy" "frontend" {
   bucket = aws_s3_bucket.frontend.id
 
