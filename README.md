@@ -25,6 +25,7 @@
 **Integration & Security:**
 [![E2E Tests](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/e2e-tests.yml/badge.svg)](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/e2e-tests.yml)
 [![Security Scans](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/security.yml/badge.svg)](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/security.yml)
+[![CodeQL](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/codeql.yml/badge.svg)](https://github.com/tomassvensson/angular-quarkus-demo/actions/workflows/codeql.yml)
 [![Codecov](https://codecov.io/gh/tomassvensson/angular-quarkus-demo/branch/main/graph/badge.svg)](https://codecov.io/gh/tomassvensson/angular-quarkus-demo)
 
 Full-stack demo application with:
@@ -125,7 +126,8 @@ Full-stack demo application with:
 - **Local AWS**: LocalStack (DynamoDB + CloudWatch + Cognito for CI)
 - **Testing**: Vitest (unit), Playwright (E2E), JUnit 5 + Testcontainers (backend)
 - **Code Quality**: SonarCloud (frontend + backend), Trivy FS scan, JaCoCo coverage
-- **Build/CI**: Maven Wrapper, npm, GitHub Actions (6 workflows)
+- **Security**: GitHub CodeQL (SAST for Java, JavaScript/TypeScript, Actions), OWASP ZAP (DAST baseline scan)
+- **Build/CI**: Maven Wrapper, npm, GitHub Actions (8 workflows)
 
 ## Product Screenshots
 
@@ -158,9 +160,9 @@ Full-stack demo application with:
 - **Error Interceptor**: Global HTTP error handling with 401 redirect
 - **Auth Switching**: Cognito (production) ↔ Keycloak (dev/test) via Quarkus profiles
 - **DynamoDB**: Link-list persistence with automatic table creation in dev/test
-- Frontend build/tests/E2E and backend tests in GitHub Actions (6 workflows)
+- Frontend build/tests/E2E and backend tests in GitHub Actions (8 workflows)
 - SonarCloud analysis for both frontend and backend with coverage reporting
-- Security scanning with Trivy filesystem scan
+- Security scanning with Trivy filesystem scan, GitHub CodeQL SAST, and OWASP ZAP DAST
 
 ### ⏳ Work in Progress / Next Improvements
 
@@ -200,7 +202,7 @@ For GitHub Actions CI, AWS cloud access is not required for basic pipeline valid
 │   ├── e2e/                    Playwright E2E tests + fixtures
 │   └── public/                 Static assets
 └── .github/
-    ├── workflows/              6 CI workflows (build, test, E2E, security)
+    ├── workflows/              8 CI workflows (build, test, E2E, security, CodeQL, terraform)
     ├── keycloak/               Keycloak Docker Compose + realm export
     └── localstack/             LocalStack Docker Compose + seed script
 ```
@@ -408,6 +410,8 @@ Workflow files:
 - `.github/workflows/frontend-tests.yml` — Frontend unit tests (Vitest)
 - `.github/workflows/e2e-tests.yml` — Full E2E tests (Keycloak + backend + Playwright)
 - `.github/workflows/security.yml` — SonarCloud analysis + Trivy vulnerability scan
+- `.github/workflows/codeql.yml` — GitHub CodeQL semantic SAST (Java, JS/TS, Actions)
+- `.github/workflows/terraform-lint.yml` — Terraform fmt, validate, tflint
 
 They run on every push and pull request and provide separate pass/fail badges.
 
@@ -418,8 +422,10 @@ They run on every push and pull request and provide separate pass/fail badges.
 - **Secrets management**:
   - local/dev: environment variables and LocalStack SSM for test-only values
   - production: managed secret store (AWS SSM Parameter Store / Secrets Manager), never checked into repo
-- **Static analysis**: SonarCloud runs on every push for both frontend and backend, checking code quality, security hotspots, and code coverage.
+- **Static analysis (SAST)**: SonarCloud runs on every push for both frontend and backend, checking code quality, security hotspots, and code coverage.
+- **CodeQL (SAST)**: GitHub's CodeQL runs on every push and PR, performing semantic code analysis for Java/Kotlin, JavaScript/TypeScript, and GitHub Actions to detect security vulnerabilities, bugs, and anti-patterns.
 - **Vulnerability scanning**: Trivy filesystem scan runs in CI to detect known CVEs in dependencies.
+- **Dynamic analysis (DAST)**: OWASP ZAP baseline scan runs against the live backend during E2E tests, detecting runtime security issues like missing headers, misconfigurations, and injection vulnerabilities.
 
 ## Notes for Production
 
