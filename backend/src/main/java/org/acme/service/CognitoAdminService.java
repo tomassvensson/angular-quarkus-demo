@@ -52,6 +52,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -64,6 +65,16 @@ public class CognitoAdminService {
     private static final String KEYCLOAK_MOCK_SUFFIX = " (keycloak mock)";
     private static final String STATUS_ENABLED = "Enabled";
     private static final Logger LOG = Logger.getLogger(CognitoAdminService.class);
+    private static final long CACHE_TTL_MS = 30_000; // 30-second cache for user list
+
+    // Cache for user list to avoid re-fetching from Cognito on every page/sort request
+    private final Map<String, CachedUserList> userListCache = new ConcurrentHashMap<>();
+
+    private record CachedUserList(List<CognitoUserView> users, long expiresAt) {
+        boolean isExpired() {
+            return System.currentTimeMillis() > expiresAt;
+        }
+    }
 
     @ConfigProperty(name = "aws.region")
     String awsRegion;
@@ -94,22 +105,47 @@ public class CognitoAdminService {
         int safePage = Math.max(0, page);
         int safeSize = Math.clamp(size, 1, 100);
 
-        List<CognitoUserView> all = fetchAllUsers();
+        List<CognitoUserView> all = getCachedUsers();
         Comparator<CognitoUserView> comparator = comparatorFor(sortBy);
         if ("desc".equalsIgnoreCase(direction)) {
             comparator = comparator.reversed();
         }
+        all = new ArrayList<>(all);
         all.sort(comparator);
 
         int fromIndex = Math.min(safePage * safeSize, all.size());
         int toIndex = Math.min(fromIndex + safeSize, all.size());
+        boolean hasNextPage = toIndex < all.size();
 
         CognitoUserPage result = new CognitoUserPage();
         result.setItems(all.subList(fromIndex, toIndex));
         result.setPage(safePage);
         result.setSize(safeSize);
         result.setTotal(all.size());
+        // Cursor encodes the next page offset for efficient pagination
+        result.setCursor(hasNextPage ? String.valueOf(safePage + 1) : null);
         return result;
+    }
+
+    /**
+     * Get users from cache, fetching from Cognito only if cache is expired or empty.
+     */
+    private List<CognitoUserView> getCachedUsers() {
+        String cacheKey = "allUsers";
+        CachedUserList cached = userListCache.get(cacheKey);
+        if (cached != null && !cached.isExpired()) {
+            return cached.users();
+        }
+        List<CognitoUserView> users = fetchAllUsers();
+        userListCache.put(cacheKey, new CachedUserList(users, System.currentTimeMillis() + CACHE_TTL_MS));
+        return users;
+    }
+
+    /**
+     * Invalidate the user list cache (call after user mutations).
+     */
+    public void invalidateUserCache() {
+        userListCache.clear();
     }
 
     public CognitoUserView getUser(String username) {

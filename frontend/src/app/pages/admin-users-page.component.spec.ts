@@ -30,7 +30,8 @@ describe('AdminUsersPageComponent', () => {
     ],
     page: 0,
     size: 10,
-    total: 1
+    total: 1,
+    cursor: null
   };
 
   beforeEach(async () => {
