@@ -89,6 +89,18 @@ jobs:
           fail_action: false
           artifact_name: 'zap-dast-report'
 
+      - name: OWASP ZAP API Scan
+        if: ${{ !cancelled() }}
+        uses: zaproxy/action-api-scan@bd24b11e76da11ab60302c8ae87f091cbb11f034 # v0.10.0
+        with:
+          target: 'http://localhost:8080/q/openapi'
+          format: openapi
+          rules_file_name: '.github/zap/rules.tsv'
+          cmd_options: '-l WARN'
+          allow_issue_writing: false
+          fail_action: false
+          artifact_name: 'zap-api-scan-report'
+
       - name: Upload ZAP Report
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         if: ${{ !cancelled() }}
