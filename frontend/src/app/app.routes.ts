@@ -7,6 +7,7 @@ import { MyListsComponent } from './pages/my-lists.component';
 import { PublicListsComponent } from './pages/public-lists.component';
 import { ListDetailComponent } from './pages/list-detail.component';
 import { NotificationsPageComponent } from './pages/notifications-page.component';
+import { VoteAnalyticsComponent } from './pages/vote-analytics.component';
 
 export const routes: Routes = [
 	{ path: '', component: HomePageComponent },
@@ -16,6 +17,7 @@ export const routes: Routes = [
     { path: 'my-lists', component: MyListsComponent },
     { path: 'public-lists', component: PublicListsComponent },
     { path: 'lists/:id', component: ListDetailComponent },
-    { path: 'notifications', component: NotificationsPageComponent }
+    { path: 'notifications', component: NotificationsPageComponent },
+    { path: 'analytics', component: VoteAnalyticsComponent }
 ];
 

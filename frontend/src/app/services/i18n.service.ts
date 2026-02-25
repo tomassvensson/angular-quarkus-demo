@@ -22,6 +22,7 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.listUsers': 'List Users',
     'nav.publicLists': 'Public Lists',
     'nav.myLists': 'My Lists',
+    'nav.analytics': 'Analytics',
     'nav.profile': 'Profile',
     'nav.signIn': 'Sign in',
     'nav.signOut': 'Sign out',
@@ -110,6 +111,18 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'publicLists.page': 'Page',
     'publicLists.of': 'of',
     'publicLists.totalLists': 'total lists',
+
+    // Vote Analytics
+    'analytics.title': 'Vote Analytics',
+    'analytics.subtitle': 'Rating distribution and trends for published lists.',
+    'analytics.loading': 'Loading analytics...',
+    'analytics.noData': 'No published lists found.',
+    'analytics.totalVotes': 'Total Votes',
+    'analytics.overallAverage': 'Overall Average',
+    'analytics.ratedLists': 'Rated Lists',
+    'analytics.votes': 'Votes',
+    'analytics.avg': 'Avg',
+    'analytics.backToPublicLists': 'Back to Public Lists',
 
     // List Detail
     'listDetail.editName': 'Edit Name',
@@ -233,6 +246,7 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.listUsers': 'Benutzer',
     'nav.publicLists': 'Öffentliche Listen',
     'nav.myLists': 'Meine Listen',
+    'nav.analytics': 'Analyse',
     'nav.profile': 'Profil',
     'nav.signIn': 'Anmelden',
     'nav.signOut': 'Abmelden',
@@ -321,6 +335,18 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'publicLists.page': 'Seite',
     'publicLists.of': 'von',
     'publicLists.totalLists': 'Listen gesamt',
+
+    // Vote Analytics
+    'analytics.title': 'Abstimmungsanalyse',
+    'analytics.subtitle': 'Bewertungsverteilung und Trends für veröffentlichte Listen.',
+    'analytics.loading': 'Analyse wird geladen...',
+    'analytics.noData': 'Keine veröffentlichten Listen gefunden.',
+    'analytics.totalVotes': 'Gesamtstimmen',
+    'analytics.overallAverage': 'Gesamtdurchschnitt',
+    'analytics.ratedLists': 'Bewertete Listen',
+    'analytics.votes': 'Stimmen',
+    'analytics.avg': 'Durchschnitt',
+    'analytics.backToPublicLists': 'Zurück zu öffentlichen Listen',
 
     // List Detail
     'listDetail.editName': 'Name bearbeiten',
@@ -444,6 +470,7 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'nav.listUsers': 'Användare',
     'nav.publicLists': 'Publika listor',
     'nav.myLists': 'Mina listor',
+    'nav.analytics': 'Analys',
     'nav.profile': 'Profil',
     'nav.signIn': 'Logga in',
     'nav.signOut': 'Logga ut',
@@ -532,6 +559,18 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'publicLists.page': 'Sida',
     'publicLists.of': 'av',
     'publicLists.totalLists': 'listor totalt',
+
+    // Vote Analytics
+    'analytics.title': 'Röstanalys',
+    'analytics.subtitle': 'Betygsfördelning och trender för publicerade listor.',
+    'analytics.loading': 'Laddar analys...',
+    'analytics.noData': 'Inga publicerade listor hittade.',
+    'analytics.totalVotes': 'Totala röster',
+    'analytics.overallAverage': 'Totalt genomsnitt',
+    'analytics.ratedLists': 'Betygsatta listor',
+    'analytics.votes': 'Röster',
+    'analytics.avg': 'Genomsnitt',
+    'analytics.backToPublicLists': 'Tillbaka till publika listor',
 
     // List Detail
     'listDetail.editName': 'Ändra namn',
