@@ -386,10 +386,11 @@ You can run almost the same pipeline locally to avoid wasting GitHub minutes:
     - `bash .github/localstack/seed-localstack.sh`
 
 1. Optional: run GitHub workflows locally with `act`:
-  - install [`act`](https://github.com/nektos/act)
-  - run specific workflow, for example:
-    - `act push -W .github/workflows/backend-tests.yml`
-    - `act push -W .github/workflows/frontend-tests.yml`
+
+- install [`act`](https://github.com/nektos/act)
+- run specific workflow, for example:
+  - `act push -W .github/workflows/backend-tests.yml`
+  - `act push -W .github/workflows/frontend-tests.yml`
 
 Note: `act` and GitHub-hosted runners are similar but not identical; always treat local runs as pre-checks and GitHub as final truth.
 
