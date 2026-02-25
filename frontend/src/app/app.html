@@ -28,7 +28,12 @@
     @if (loading()) {
       <span>{{ i18n.t('status.loading') }}</span>
     } @else if (me()) {
-      <span>{{ i18n.t('status.signedInAs') }} <strong>{{ me()?.username }}</strong></span>
+      <span class="status-user">
+        @if (me()?.profilePictureUrl) {
+          <img class="status-avatar" [src]="me()?.profilePictureUrl" alt="" width="24" height="24" />
+        }
+        {{ i18n.t('status.signedInAs') }} <strong>{{ me()?.username }}</strong>
+      </span>
       <span>{{ i18n.t('status.roles') }}: {{ me()?.roles?.join(', ') }}</span>
     } @else {
       <span>{{ i18n.t('status.notSignedIn') }}</span>

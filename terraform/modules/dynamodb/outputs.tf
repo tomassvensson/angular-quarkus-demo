@@ -22,6 +22,10 @@ output "audit_logs_table_name" {
   value = aws_dynamodb_table.audit_logs.name
 }
 
+output "user_settings_table_name" {
+  value = aws_dynamodb_table.user_settings.name
+}
+
 output "table_arns" {
   description = "ARNs of all DynamoDB tables"
   value = [
@@ -31,5 +35,6 @@ output "table_arns" {
     aws_dynamodb_table.votes.arn,
     aws_dynamodb_table.notifications.arn,
     aws_dynamodb_table.audit_logs.arn,
+    aws_dynamodb_table.user_settings.arn,
   ]
 }

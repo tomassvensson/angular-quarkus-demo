@@ -12,7 +12,10 @@ import org.acme.graphql.model.MfaPreferenceInput;
 import org.acme.graphql.model.MfaSetupResponse;
 import org.acme.graphql.model.TrustedDevice;
 import org.acme.graphql.model.UpdateUserInput;
+import org.acme.model.UserSettings;
 import org.acme.service.CognitoAdminService;
+import org.acme.service.ProfilePictureService;
+import org.acme.service.UserSettingsService;
 import org.eclipse.microprofile.graphql.DefaultValue;
 import org.eclipse.microprofile.graphql.GraphQLApi;
 import org.eclipse.microprofile.graphql.Mutation;
@@ -31,17 +34,23 @@ public class UserGraphQLApi {
 
     private final SecurityIdentity identity;
     private final CognitoAdminService cognitoAdminService;
+    private final UserSettingsService userSettingsService;
+    private final ProfilePictureService profilePictureService;
 
     @Inject
-    public UserGraphQLApi(SecurityIdentity identity, CognitoAdminService cognitoAdminService) {
+    public UserGraphQLApi(SecurityIdentity identity, CognitoAdminService cognitoAdminService,
+                          UserSettingsService userSettingsService, ProfilePictureService profilePictureService) {
         this.identity = identity;
         this.cognitoAdminService = cognitoAdminService;
+        this.userSettingsService = userSettingsService;
+        this.profilePictureService = profilePictureService;
     }
 
     @Query("me")
     public CurrentUserView me() {
         CurrentUserView me = new CurrentUserView();
-        me.setUsername(identity.getPrincipal().getName());
+        String username = identity.getPrincipal().getName();
+        me.setUsername(username);
 
         String email = identity.getAttribute("email");
         me.setEmail(email == null || email.isBlank() ? me.getUsername() : email);
@@ -49,7 +58,30 @@ public class UserGraphQLApi {
         List<String> roles = new ArrayList<>(identity.getRoles());
         roles.sort(String::compareToIgnoreCase);
         me.setRoles(roles);
+
+        // Resolve profile picture URL
+        UserSettings settings = userSettingsService.getSettings(username);
+        String profilePictureUrl = profilePictureService.getProfilePictureUrl(
+            username, settings.getProfilePictureSource(), settings.getProfilePictureS3Key(),
+            me.getEmail());
+        me.setProfilePictureUrl(profilePictureUrl);
+
         return me;
+    }
+
+    @Query("userSettings")
+    public UserSettings getUserSettings() {
+        String userId = identity.getPrincipal().getName();
+        return userSettingsService.getSettings(userId);
+    }
+
+    @Mutation("updateUserSettings")
+    public UserSettings updateUserSettings(
+            @Name("profilePictureSource") String profilePictureSource,
+            @Name("theme") String theme,
+            @Name("locale") String locale) {
+        String userId = identity.getPrincipal().getName();
+        return userSettingsService.updateSettings(userId, profilePictureSource, theme, locale);
     }
 
     @Query("users")

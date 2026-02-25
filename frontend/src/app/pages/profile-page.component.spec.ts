@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ProfilePageComponent } from './profile-page.component';
 import { GraphqlApiService } from '../services/graphql-api.service';
 import { Router } from '@angular/router';
@@ -35,7 +37,11 @@ describe('ProfilePageComponent', () => {
       forgetDevice: vi.fn(),
       setupTotp: vi.fn(),
       verifyTotp: vi.fn(),
-      setMfaPreference: vi.fn()
+      setMfaPreference: vi.fn(),
+      getProfilePictureInfo: vi.fn(),
+      getProfilePictureUploadUrl: vi.fn(),
+      confirmProfilePictureUpload: vi.fn(),
+      deleteProfilePicture: vi.fn()
     };
     routerSpy = {
       navigate: vi.fn()
@@ -50,10 +56,16 @@ describe('ProfilePageComponent', () => {
     apiSpy.setupTotp.mockReturnValue(of({ secretCode: 'ABCDEF', qrCodeUri: 'otpauth://totp/test' }));
     apiSpy.verifyTotp.mockReturnValue(of(true));
     apiSpy.setMfaPreference.mockReturnValue(of(true));
+    apiSpy.getProfilePictureInfo.mockReturnValue(of({ url: 'https://gravatar.com/avatar/test', source: 'gravatar', uploadEnabled: true }));
+    apiSpy.getProfilePictureUploadUrl.mockReturnValue(of({ uploadUrl: 'https://s3.example.com/upload' }));
+    apiSpy.confirmProfilePictureUpload.mockReturnValue(of({ status: 'confirmed' }));
+    apiSpy.deleteProfilePicture.mockReturnValue(of({ status: 'deleted' }));
 
     await TestBed.configureTestingModule({
       imports: [ProfilePageComponent],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: GraphqlApiService, useValue: apiSpy },
         { provide: Router, useValue: routerSpy }
       ]
@@ -233,7 +245,8 @@ describe('ProfilePageComponent', () => {
     component.changingPassword.set(true);
     fixture.detectChanges();
 
-    const submitBtn = fixture.nativeElement.querySelector('.btn-primary') as HTMLButtonElement;
+    const passwordSection = fixture.nativeElement.querySelector('.password-section');
+    const submitBtn = passwordSection?.querySelector('.btn-primary') as HTMLButtonElement;
     expect(submitBtn.disabled).toBe(true);
   });
 
@@ -364,5 +377,127 @@ describe('ProfilePageComponent', () => {
     component.submitTotpVerify();
 
     expect(apiSpy.verifyTotp).not.toHaveBeenCalled();
+  });
+
+  // --- Profile Picture tests ---
+  it('should load profile picture info on init', () => {
+    expect(apiSpy.getProfilePictureInfo).toHaveBeenCalled();
+    expect(component.profilePictureUrl()).toBe('https://gravatar.com/avatar/test');
+    expect(component.profilePictureInfo()?.source).toBe('gravatar');
+  });
+
+  it('should handle profile picture info error gracefully', () => {
+    apiSpy.getProfilePictureInfo.mockReturnValue(throwError(() => new Error('Not found')));
+
+    component.loadProfilePicture();
+    fixture.detectChanges();
+
+    expect(component.profilePictureInfo()).toBeNull();
+  });
+
+  it('should show error when file is too large', () => {
+    const bigFile = new File([new ArrayBuffer(6 * 1024 * 1024)], 'big.png', { type: 'image/png' });
+    const event = { target: { files: [bigFile] } } as unknown as Event;
+
+    component.onFileSelected(event);
+
+    expect(component.profilePictureError()).toBeTruthy();
+    expect(apiSpy.getProfilePictureUploadUrl).not.toHaveBeenCalled();
+  });
+
+  it('should do nothing when no file is selected', () => {
+    const event = { target: { files: [] } } as unknown as Event;
+
+    component.onFileSelected(event);
+
+    expect(apiSpy.getProfilePictureUploadUrl).not.toHaveBeenCalled();
+  });
+
+  it('should upload file through presigned URL flow', () => {
+    const httpMock = TestBed.inject(HttpTestingController);
+    const file = new File(['data'], 'photo.png', { type: 'image/png' });
+    const event = { target: { files: [file], value: '' } } as unknown as Event;
+
+    component.onFileSelected(event);
+
+    expect(apiSpy.getProfilePictureUploadUrl).toHaveBeenCalled();
+
+    // After getting upload URL, the component uploads to S3
+    const s3Req = httpMock.expectOne('https://s3.example.com/upload');
+    expect(s3Req.request.method).toBe('PUT');
+    s3Req.flush(null);
+
+    // Then confirms upload with backend
+    expect(apiSpy.confirmProfilePictureUpload).toHaveBeenCalled();
+    expect(component.profilePictureSuccess()).toBeTruthy();
+    expect(component.uploadingPicture()).toBe(false);
+  });
+
+  it('should handle S3 upload failure', () => {
+    const httpMock = TestBed.inject(HttpTestingController);
+    const file = new File(['data'], 'photo.png', { type: 'image/png' });
+    const event = { target: { files: [file], value: '' } } as unknown as Event;
+
+    component.onFileSelected(event);
+
+    const s3Req = httpMock.expectOne('https://s3.example.com/upload');
+    s3Req.flush('Error', { status: 500, statusText: 'Server Error' });
+
+    expect(component.profilePictureError()).toBeTruthy();
+    expect(component.uploadingPicture()).toBe(false);
+  });
+
+  it('should handle getUploadUrl error', () => {
+    apiSpy.getProfilePictureUploadUrl.mockReturnValue(throwError(() => new Error('Service unavailable')));
+    const file = new File(['data'], 'photo.png', { type: 'image/png' });
+    const event = { target: { files: [file], value: '' } } as unknown as Event;
+
+    component.onFileSelected(event);
+
+    expect(component.profilePictureError()).toBe('Service unavailable');
+    expect(component.uploadingPicture()).toBe(false);
+  });
+
+  it('should handle confirmUpload error', () => {
+    const httpMock = TestBed.inject(HttpTestingController);
+    apiSpy.confirmProfilePictureUpload.mockReturnValue(throwError(() => new Error('Confirm failed')));
+    const file = new File(['data'], 'photo.png', { type: 'image/png' });
+    const event = { target: { files: [file], value: '' } } as unknown as Event;
+
+    component.onFileSelected(event);
+
+    const s3Req = httpMock.expectOne('https://s3.example.com/upload');
+    s3Req.flush(null);
+
+    expect(component.profilePictureError()).toBe('Confirm failed');
+    expect(component.uploadingPicture()).toBe(false);
+  });
+
+  it('should remove profile picture', () => {
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+
+    component.removeProfilePicture();
+
+    expect(apiSpy.deleteProfilePicture).toHaveBeenCalled();
+    expect(component.profilePictureSuccess()).toBeTruthy();
+    expect(component.uploadingPicture()).toBe(false);
+  });
+
+  it('should not remove profile picture if user cancels', () => {
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(false);
+
+    component.removeProfilePicture();
+
+    expect(apiSpy.deleteProfilePicture).not.toHaveBeenCalled();
+  });
+
+  it('should handle remove profile picture error', () => {
+    vi.spyOn(globalThis, 'confirm').mockReturnValue(true);
+    apiSpy.deleteProfilePicture.mockReturnValue(throwError(() => new Error('Delete failed')));
+
+    component.removeProfilePicture();
+
+    expect(component.profilePictureError()).toBe('Delete failed');
+    expect(component.uploadingPicture()).toBe(false);
   });
 });

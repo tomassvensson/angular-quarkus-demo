@@ -5,6 +5,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import org.acme.graphql.model.NotificationPage;
 import org.acme.model.Notification;
+import org.acme.websocket.NotificationWebSocket;
 import org.jboss.logging.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
@@ -84,6 +85,20 @@ public class NotificationService {
         notification.setTargetId(targetId);
         notification.setCreatedAt(Instant.now());
         notificationTable.putItem(notification);
+
+        // Push real-time notification via WebSocket
+        try {
+            String json = String.format(
+                "{\"type\":\"%s\",\"entityType\":\"%s\",\"entityId\":\"%s\",\"actorUsername\":\"%s\",\"preview\":\"%s\",\"id\":\"%s\"}",
+                type, entityType, entityId,
+                actorUsername != null ? actorUsername.replace("\"", "\\\"") : "",
+                preview != null ? preview.replace("\"", "\\\"") : "",
+                notification.getId()
+            );
+            NotificationWebSocket.sendToUser(userId, json);
+        } catch (Exception e) {
+            LOG.debug("WebSocket notification push failed (non-critical): " + e.getMessage());
+        }
     }
 
     public NotificationPage getNotifications(String userId, int page, int size) {

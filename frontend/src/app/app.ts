@@ -5,6 +5,7 @@ import { CurrentUser, GraphqlApiService } from './services/graphql-api.service';
 import { LogCollectorService } from './services/log-collector.service';
 import { ThemeService } from './services/theme.service';
 import { I18nService } from './services/i18n.service';
+import { WebSocketNotificationService } from './services/websocket-notification.service';
 import { NotificationBellComponent } from './components/notification-bell.component';
 import { ThemeToggleComponent } from './components/theme-toggle.component';
 import { LanguageSelectorComponent } from './components/language-selector.component';
@@ -22,6 +23,7 @@ export class App implements OnInit, OnDestroy {
   private readonly platformId = inject(PLATFORM_ID);
   private readonly logCollector = inject(LogCollectorService);
   private readonly themeService = inject(ThemeService);
+  private readonly wsNotification = inject(WebSocketNotificationService);
   protected readonly i18n = inject(I18nService);
   private sessionProbeId: ReturnType<typeof setInterval> | null = null;
   private hadAuthenticatedSession = false;
@@ -56,6 +58,7 @@ export class App implements OnInit, OnDestroy {
       this.sessionProbeId = null;
     }
     this.logCollector.stop();
+    this.wsNotification.disconnect();
   }
 
   protected reloadMe(): void {
@@ -67,10 +70,13 @@ export class App implements OnInit, OnDestroy {
         this.hadAuthenticatedSession = true;
         this.me.set(user);
         this.loading.set(false);
+        // Connect WebSocket for real-time notifications
+        this.wsNotification.connect(user.username);
       },
       error: (err: Error) => {
         this.me.set(null);
         this.loading.set(false);
+        this.wsNotification.disconnect();
 
         if (this.hadAuthenticatedSession && err.message === 'AUTH_REQUIRED') {
           this.hadAuthenticatedSession = false;

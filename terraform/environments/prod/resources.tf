@@ -28,21 +28,22 @@ module "dynamodb" {
 module "ecs" {
   source = "../../modules/ecs"
 
-  project_name          = var.project_name
-  environment           = var.environment
-  vpc_id                = var.vpc_id
-  private_subnet_ids    = var.private_subnet_ids
-  public_subnet_ids     = var.public_subnet_ids
-  container_image       = var.container_image
-  desired_count         = 2
-  cpu                   = 512
-  memory                = 1024
-  cognito_user_pool_id  = module.cognito.user_pool_id
-  cognito_client_id     = module.cognito.client_id
-  cognito_client_secret = module.cognito.client_secret
-  dynamodb_table_arns   = module.dynamodb.table_arns
-  aws_region            = var.aws_region
-  tags                  = local.tags
+  project_name                = var.project_name
+  environment                 = var.environment
+  vpc_id                      = var.vpc_id
+  private_subnet_ids          = var.private_subnet_ids
+  public_subnet_ids           = var.public_subnet_ids
+  container_image             = var.container_image
+  desired_count               = 2
+  cpu                         = 512
+  memory                      = 1024
+  cognito_user_pool_id        = module.cognito.user_pool_id
+  cognito_client_id           = module.cognito.client_id
+  cognito_client_secret       = module.cognito.client_secret
+  dynamodb_table_arns         = module.dynamodb.table_arns
+  profile_pictures_bucket_arn = "arn:aws:s3:::toms-profile-pictures"
+  aws_region                  = var.aws_region
+  tags                        = local.tags
 }
 
 module "cdn" {

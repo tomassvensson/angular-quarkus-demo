@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, OnInit, OnDestroy, PLATFORM_ID } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, OnInit, OnDestroy, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { SocialService } from '../services/social.service';
+import { WebSocketNotificationService } from '../services/websocket-notification.service';
 import { I18nService } from '../services/i18n.service';
 
 @Component({
@@ -49,6 +50,7 @@ import { I18nService } from '../services/i18n.service';
 export class NotificationBellComponent implements OnInit, OnDestroy {
   private readonly socialService = inject(SocialService);
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly wsService = inject(WebSocketNotificationService);
   protected readonly i18n = inject(I18nService);
   private pollInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -59,11 +61,21 @@ export class NotificationBellComponent implements OnInit, OnDestroy {
     return count > 99 ? '99+' : String(count);
   });
 
+  constructor() {
+    // When a WebSocket notification arrives, increment the unread count
+    effect(() => {
+      const notification = this.wsService.lastNotification();
+      if (notification) {
+        this.unreadCount.update(c => c + 1);
+      }
+    });
+  }
+
   ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) return;
     this.refresh();
-    // Poll every 30 seconds for new notifications
-    this.pollInterval = setInterval(() => this.refresh(), 30_000);
+    // Poll every 60 seconds as fallback (WebSocket handles real-time)
+    this.pollInterval = setInterval(() => this.refresh(), 60_000);
   }
 
   ngOnDestroy() {
