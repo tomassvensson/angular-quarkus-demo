@@ -2,6 +2,7 @@ package org.acme.resource;
 
 import jakarta.inject.Inject;
 import org.acme.graphql.model.NotificationPage;
+import org.acme.graphql.model.VoteAnalytics;
 import org.acme.graphql.model.VoteStats;
 import org.acme.model.Comment;
 import org.acme.service.AuditService;
@@ -55,6 +56,13 @@ public class SocialGraphQLResource {
                                    @Name("entityId") String entityId) {
         String userId = identity.getPrincipal().getName();
         return voteService.getVoteStats(entityType, entityId, userId);
+    }
+
+    @Query("voteAnalytics")
+    public VoteAnalytics getVoteAnalytics(@Name("entityType") String entityType,
+                                           @Name("entityId") String entityId) {
+        String userId = identity.getPrincipal().getName();
+        return voteService.getVoteAnalytics(entityType, entityId, userId);
     }
 
     // ========== Comments ==========

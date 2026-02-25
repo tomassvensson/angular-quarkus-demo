@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { VoteStats, Comment, NotificationPage } from '../models';
+import { VoteStats, VoteAnalytics, Comment, NotificationPage } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class SocialService {
@@ -41,6 +41,16 @@ export class SocialService {
     }`;
     return this.query<{ voteStats: VoteStats }>(q, { entityType, entityId })
       .pipe(map(d => d.voteStats));
+  }
+
+  getVoteAnalytics(entityType: string, entityId: string): Observable<VoteAnalytics> {
+    const q = `query VoteAnalytics($entityType: String!, $entityId: String!) {
+      voteAnalytics(entityType: $entityType, entityId: $entityId) {
+        averageRating voteCount ratingDistribution { rating count } userRating
+      }
+    }`;
+    return this.query<{ voteAnalytics: VoteAnalytics }>(q, { entityType, entityId })
+      .pipe(map(d => d.voteAnalytics));
   }
 
   // ========== Comments ==========

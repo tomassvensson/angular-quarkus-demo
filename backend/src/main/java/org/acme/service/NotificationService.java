@@ -7,8 +7,11 @@ import org.acme.graphql.model.NotificationPage;
 import org.acme.model.Notification;
 import org.jboss.logging.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -16,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.primaryPartitionKey;
+import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.secondaryPartitionKey;
 
 @ApplicationScoped
 public class NotificationService {
@@ -23,6 +27,7 @@ public class NotificationService {
     private static final Logger LOG = Logger.getLogger(NotificationService.class);
     private final DynamoDbEnhancedClient enhancedClient;
     private DynamoDbTable<Notification> notificationTable;
+    private DynamoDbIndex<Notification> userIndex;
 
     @Inject
     public NotificationService(DynamoDbEnhancedClient enhancedClient) {
@@ -34,7 +39,8 @@ public class NotificationService {
         .addAttribute(String.class, a -> a.name("id")
             .getter(Notification::getId).setter(Notification::setId).tags(primaryPartitionKey()))
         .addAttribute(String.class, a -> a.name("userId")
-            .getter(Notification::getUserId).setter(Notification::setUserId))
+            .getter(Notification::getUserId).setter(Notification::setUserId)
+            .tags(secondaryPartitionKey("UserIndex")))
         .addAttribute(String.class, a -> a.name("type")
             .getter(Notification::getType).setter(Notification::setType))
         .addAttribute(String.class, a -> a.name("entityType")
@@ -56,6 +62,7 @@ public class NotificationService {
     @PostConstruct
     void init() {
         notificationTable = enhancedClient.table("Notifications", NOTIFICATION_SCHEMA);
+        userIndex = notificationTable.index("UserIndex");
         try {
             notificationTable.createTable();
         } catch (Exception e) {
@@ -127,8 +134,11 @@ public class NotificationService {
     }
 
     private List<Notification> getUserNotifications(String userId) {
-        return notificationTable.scan().items().stream()
-            .filter(n -> userId.equals(n.getUserId()))
+        // Use UserIndex GSI to query by userId instead of scanning the entire table
+        return userIndex.query(QueryConditional.keyEqualTo(
+                Key.builder().partitionValue(userId).build()))
+            .stream()
+            .flatMap(page -> page.items().stream())
             .toList();
     }
 }

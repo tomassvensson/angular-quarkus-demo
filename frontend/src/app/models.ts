@@ -35,6 +35,18 @@ export interface VoteStats {
   userRating: number | null;
 }
 
+export interface RatingEntry {
+  rating: number;
+  count: number;
+}
+
+export interface VoteAnalytics {
+  averageRating: number;
+  voteCount: number;
+  ratingDistribution: RatingEntry[];
+  userRating: number | null;
+}
+
 export interface Comment {
   id: string;
   entityType: string;

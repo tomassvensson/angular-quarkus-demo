@@ -126,6 +126,27 @@ class SocialGraphQLResourceTest {
                 .body("data.voteStats.userRating", is(5));
     }
 
+    @Test
+    @Order(14)
+    @TestSecurity(user = "voter1", roles = {"RegularUser"})
+    void testGetVoteAnalytics() {
+        String query = "query VoteAnalytics($entityType: String!, $entityId: String!) { voteAnalytics(entityType: $entityType, entityId: $entityId) { averageRating voteCount ratingDistribution { rating count } userRating } }";
+        String vars = String.format("{\"entityType\": \"LIST\", \"entityId\": \"%s\"}", testListId);
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(graphqlBody(query, vars))
+            .when().post("/api/v1/graphql")
+            .then()
+                .statusCode(200)
+                .body("data.voteAnalytics.averageRating", is(3.5f))
+                .body("data.voteAnalytics.voteCount", is(2))
+                .body("data.voteAnalytics.userRating", is(5))
+                .body("data.voteAnalytics.ratingDistribution", hasSize(5))
+                .body("data.voteAnalytics.ratingDistribution[0].rating", is(1))
+                .body("data.voteAnalytics.ratingDistribution[0].count", is(0));
+    }
+
     // --- Comment tests ---
 
     @Test

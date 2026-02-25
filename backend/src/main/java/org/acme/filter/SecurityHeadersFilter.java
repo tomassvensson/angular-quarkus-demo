@@ -24,14 +24,14 @@ import jakarta.enterprise.event.Observes;
 public class SecurityHeadersFilter {
 
     // CSP with all directives explicitly defined to avoid ZAP [10055] "no fallback" warnings.
-    // Allows inline scripts/styles and eval for Swagger UI and GraphQL UI.
+    // No unsafe-inline/unsafe-eval — Swagger UI and GraphQL UI are disabled in production.
     static final String CONTENT_SECURITY_POLICY =
             "default-src 'self'; "
-                    + "script-src 'self' 'unsafe-inline' 'unsafe-eval'; "
-                    + "style-src 'self' 'unsafe-inline'; "
-                    + "img-src 'self' data:; "
+                    + "script-src 'self'; "
+                    + "style-src 'self'; "
+                    + "img-src 'self' data: https://www.gravatar.com; "
                     + "font-src 'self'; "
-                    + "connect-src 'self'; "
+                    + "connect-src 'self' wss:; "
                     + "frame-ancestors 'none'; "
                     + "form-action 'self'; "
                     + "base-uri 'self'; "
