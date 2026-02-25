@@ -198,7 +198,7 @@ class AuditServiceTest {
 
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
-    void initCreatesTable() throws Exception {
+    void initCreatesTable() {
         DynamoDbEnhancedClient mockClient = mock(DynamoDbEnhancedClient.class);
         DynamoDbTable<AuditLog> table = mock(DynamoDbTable.class);
         when(mockClient.table(any(String.class), any())).thenReturn((DynamoDbTable) table);
@@ -211,14 +211,14 @@ class AuditServiceTest {
 
     @Test
     @SuppressWarnings({"unchecked", "rawtypes"})
-    void initHandlesTableAlreadyExists() throws Exception {
+    void initHandlesTableAlreadyExists() {
         DynamoDbEnhancedClient mockClient = mock(DynamoDbEnhancedClient.class);
         DynamoDbTable<AuditLog> table = mock(DynamoDbTable.class);
         when(mockClient.table(any(String.class), any())).thenReturn((DynamoDbTable) table);
         doThrow(new RuntimeException("Table already exists")).when(table).createTable();
 
         AuditService svc = new AuditService(mockClient);
-        assertDoesNotThrow(() -> svc.init());
+        assertDoesNotThrow(svc::init);
     }
 
     private AuditLog makeLog(String id, Instant timestamp) {
