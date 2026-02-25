@@ -11,6 +11,20 @@ import static org.hamcrest.Matchers.*;
 @QuarkusTest
 class LinkResourceTest {
 
+    private static final String GRAPHQL_ENDPOINT = "/api/v1/graphql";
+    private static final String QUERY_PREFIX = "{\"query\": \"";
+    private static final String VARIABLES_SEPARATOR = "\", \"variables\": ";
+
+    /** Builds a JSON-encoded GraphQL request body with variables. */
+    private static String graphqlBody(String query, String variables) {
+        return QUERY_PREFIX + query.replace("\"", "\\\"") + VARIABLES_SEPARATOR + variables + "}";
+    }
+
+    /** Builds a JSON-encoded GraphQL request body without variables. */
+    private static String graphqlBody(String query) {
+        return QUERY_PREFIX + query.replace("\"", "\\\"") + "\"}";
+    }
+
     @Test
     @TestSecurity(user = "user1", roles = {"RegularUser"})
     void testLinkFlowGraphQL() {
@@ -20,8 +34,8 @@ class LinkResourceTest {
         
         String listId = given()
             .contentType(ContentType.JSON)
-            .body("{\"query\": \"" + createListQuery.replace("\"", "\\\"") + "\", \"variables\": " + createListVariables + "}")
-            .when().post("/api/v1/graphql")
+            .body(graphqlBody(createListQuery, createListVariables))
+            .when().post(GRAPHQL_ENDPOINT)
             .then()
                 .statusCode(200)
                 .body("data.createList.name", is("My GraphQL List"))
@@ -37,8 +51,8 @@ class LinkResourceTest {
 
         given()
             .contentType(ContentType.JSON)
-            .body("{\"query\": \"" + addLinkQuery.replace("\"", "\\\"") + "\", \"variables\": " + addVariables + "}")
-            .when().post("/api/v1/graphql")
+            .body(graphqlBody(addLinkQuery, addVariables))
+            .when().post(GRAPHQL_ENDPOINT)
             .then()
                 .statusCode(200)
                 .body("data.addLinkToList.linkIds", hasSize(1));
@@ -49,8 +63,8 @@ class LinkResourceTest {
         
         given()
             .contentType(ContentType.JSON)
-            .body("{\"query\": \"" + getDetailsQuery.replace("\"", "\\\"") + "\", \"variables\": " + getDetailsVars + "}")
-            .when().post("/api/v1/graphql")
+            .body(graphqlBody(getDetailsQuery, getDetailsVars))
+            .when().post(GRAPHQL_ENDPOINT)
             .then()
                 .statusCode(200)
                 .body("data.listDetails.list.id", is(listId))
@@ -62,8 +76,8 @@ class LinkResourceTest {
 
         given()
             .contentType(ContentType.JSON)
-            .body("{\"query\": \"" + updateQuery.replace("\"", "\\\"") + "\", \"variables\": " + updateVars + "}")
-            .when().post("/api/v1/graphql")
+            .body(graphqlBody(updateQuery, updateVars))
+            .when().post(GRAPHQL_ENDPOINT)
             .then()
                 .statusCode(200)
                 .body("data.updateList.published", is(true));
@@ -73,8 +87,8 @@ class LinkResourceTest {
         
         given()
             .contentType(ContentType.JSON)
-            .body("{\"query\": \"" + publishedQuery.replace("\"", "\\\"") + "\"}")
-            .when().post("/api/v1/graphql")
+            .body(graphqlBody(publishedQuery))
+            .when().post(GRAPHQL_ENDPOINT)
             .then()
                 .statusCode(200)
                 .body("data.publishedLists.items.id", hasItem(listId));
@@ -85,8 +99,8 @@ class LinkResourceTest {
         
         given()
             .contentType(ContentType.JSON)
-            .body("{\"query\": \"" + deleteQuery.replace("\"", "\\\"") + "\", \"variables\": " + deleteVars + "}")
-            .when().post("/api/v1/graphql")
+            .body(graphqlBody(deleteQuery, deleteVars))
+            .when().post(GRAPHQL_ENDPOINT)
             .then()
                 .statusCode(200)
                 .body("data.deleteList", is(true));
@@ -101,8 +115,8 @@ class LinkResourceTest {
         
         given()
             .contentType(ContentType.JSON)
-            .body("{\"query\": \"" + publishedQuery.replace("\"", "\\\"") + "\"}")
-            .when().post("/api/v1/graphql")
+            .body(graphqlBody(publishedQuery))
+            .when().post(GRAPHQL_ENDPOINT)
             .then()
                 .statusCode(anyOf(is(200), is(401))) // Accept either, then check body if 200
                 .body(containsString("errors")); 
