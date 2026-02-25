@@ -84,7 +84,7 @@ jobs:
         with:
           target: 'http://localhost:8080'
           rules_file_name: '.github/zap/rules.tsv'
-          cmd_options: '-a -j -l WARN'
+          cmd_options: '-a -j -l WARN -port 18080'
           allow_issue_writing: false
           fail_action: false
           artifact_name: 'zap-dast-report'
@@ -96,7 +96,7 @@ jobs:
           target: 'http://localhost:8080/q/openapi'
           format: openapi
           rules_file_name: '.github/zap/rules.tsv'
-          cmd_options: '-l WARN'
+          cmd_options: '-l WARN -port 18081'
           allow_issue_writing: false
           fail_action: false
           artifact_name: 'zap-api-scan-report'
