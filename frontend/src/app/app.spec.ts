@@ -91,4 +91,72 @@ describe('App', () => {
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('.brand')?.textContent).toContain('Angular + Quarkus Cognito Demo');
   });
+
+  it('should handle AUTH_REQUIRED error on reloadMe', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    // Flush initial request as auth failure
+    const reqs = httpMock.match('http://localhost:8080/api/v1/graphql'); // NOSONAR
+    reqs.forEach(r => {
+      r.flush(JSON.stringify({ errors: [{ message: 'Not signed in' }] }));
+    });
+
+    fixture.detectChanges();
+    const app = fixture.componentInstance;
+    expect(app['me']()).toBeNull();
+    expect(app['loading']()).toBe(false);
+  });
+
+  it('should show admin nav when user has AdminUser role', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    const reqs = httpMock.match('http://localhost:8080/api/v1/graphql'); // NOSONAR
+    reqs.forEach(r => {
+      if (r.request.body?.query?.includes('me')) {
+        r.flush({
+          data: {
+            me: { username: 'admin', email: 'admin@test.com', roles: ['AdminUser'] }
+          }
+        });
+      } else {
+        r.flush({ data: { unreadNotificationCount: 0 } });
+      }
+    });
+
+    fixture.detectChanges();
+    expect(fixture.componentInstance['isAdmin']()).toBe(true);
+
+    // Flush any trailing requests
+    const trailing = httpMock.match('http://localhost:8080/api/v1/graphql'); // NOSONAR
+    trailing.forEach(r => r.flush({ data: { unreadNotificationCount: 0 } }));
+  });
+
+  it('should clean up on destroy', () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.detectChanges();
+
+    // Flush initial requests
+    const reqs = httpMock.match('http://localhost:8080/api/v1/graphql'); // NOSONAR
+    reqs.forEach(r => {
+      if (r.request.body?.query?.includes('me')) {
+        r.flush({
+          data: {
+            me: { username: 'user', email: 'user@test.com', roles: ['user'] }
+          }
+        });
+      } else {
+        r.flush({ data: { unreadNotificationCount: 0 } });
+      }
+    });
+
+    // Flush notification bell requests
+    fixture.detectChanges();
+    const bellReqs = httpMock.match('http://localhost:8080/api/v1/graphql'); // NOSONAR
+    bellReqs.forEach(r => r.flush({ data: { unreadNotificationCount: 0 } }));
+
+    // Destroy should not throw
+    expect(() => fixture.destroy()).not.toThrow();
+  });
 });
