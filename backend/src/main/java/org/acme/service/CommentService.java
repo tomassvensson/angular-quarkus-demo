@@ -8,14 +8,18 @@ import org.acme.model.Link;
 import org.acme.model.LinkList;
 import org.jboss.logging.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.primaryPartitionKey;
+import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.secondaryPartitionKey;
 
 @ApplicationScoped
 public class CommentService {
@@ -27,6 +31,7 @@ public class CommentService {
     private final LinkService linkService;
     private final NotificationService notificationService;
     private DynamoDbTable<Comment> commentTable;
+    private DynamoDbIndex<Comment> entityIndex;
 
     @Inject
     public CommentService(DynamoDbEnhancedClient enhancedClient, LinkService linkService,
@@ -43,7 +48,8 @@ public class CommentService {
         .addAttribute(String.class, a -> a.name("entityType")
             .getter(Comment::getEntityType).setter(Comment::setEntityType))
         .addAttribute(String.class, a -> a.name("entityId")
-            .getter(Comment::getEntityId).setter(Comment::setEntityId))
+            .getter(Comment::getEntityId).setter(Comment::setEntityId)
+            .tags(secondaryPartitionKey("EntityIndex")))
         .addAttribute(String.class, a -> a.name("userId")
             .getter(Comment::getUserId).setter(Comment::setUserId))
         .addAttribute(String.class, a -> a.name("content")
@@ -59,6 +65,7 @@ public class CommentService {
     @PostConstruct
     void init() {
         commentTable = enhancedClient.table("Comments", COMMENT_SCHEMA);
+        entityIndex = commentTable.index("EntityIndex");
         try {
             commentTable.createTable();
         } catch (Exception e) {
@@ -207,8 +214,12 @@ public class CommentService {
     }
 
     private List<Comment> getCommentsForEntity(String entityType, String entityId) {
-        return commentTable.scan().items().stream()
-            .filter(c -> entityType.equals(c.getEntityType()) && entityId.equals(c.getEntityId()))
+        // Use EntityIndex GSI to query by entityId, then filter by entityType in memory
+        return entityIndex.query(QueryConditional.keyEqualTo(
+                Key.builder().partitionValue(entityId).build()))
+            .stream()
+            .flatMap(page -> page.items().stream())
+            .filter(c -> entityType.equals(c.getEntityType()))
             .toList();
     }
 

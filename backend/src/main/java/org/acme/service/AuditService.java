@@ -6,9 +6,12 @@ import jakarta.inject.Inject;
 import org.acme.model.AuditLog;
 import org.jboss.logging.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 import java.time.Instant;
 import java.util.Comparator;
@@ -16,6 +19,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.primaryPartitionKey;
+import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.secondaryPartitionKey;
 
 /**
  * Service for recording and querying audit log entries.
@@ -28,6 +32,8 @@ public class AuditService {
 
     private final DynamoDbEnhancedClient enhancedClient;
     private DynamoDbTable<AuditLog> auditTable;
+    private DynamoDbIndex<AuditLog> entityIndex;
+    private DynamoDbIndex<AuditLog> userIndex;
 
     private static final TableSchema<AuditLog> AUDIT_SCHEMA = TableSchema.builder(AuditLog.class)
         .newItemSupplier(AuditLog::new)
@@ -43,10 +49,12 @@ public class AuditService {
             .setter(AuditLog::setEntityType))
         .addAttribute(String.class, a -> a.name("entityId")
             .getter(AuditLog::getEntityId)
-            .setter(AuditLog::setEntityId))
+            .setter(AuditLog::setEntityId)
+            .tags(secondaryPartitionKey("EntityIndex")))
         .addAttribute(String.class, a -> a.name("userId")
             .getter(AuditLog::getUserId)
-            .setter(AuditLog::setUserId))
+            .setter(AuditLog::setUserId)
+            .tags(secondaryPartitionKey("UserIndex")))
         .addAttribute(String.class, a -> a.name("details")
             .getter(AuditLog::getDetails)
             .setter(AuditLog::setDetails))
@@ -63,6 +71,8 @@ public class AuditService {
     @PostConstruct
     void init() {
         auditTable = enhancedClient.table("AuditLogs", AUDIT_SCHEMA);
+        entityIndex = auditTable.index("EntityIndex");
+        userIndex = auditTable.index("UserIndex");
         try {
             auditTable.createTable();
         } catch (Exception e) {
@@ -118,10 +128,14 @@ public class AuditService {
      * @return List of audit log entries for the entity
      */
     public List<AuditLog> getLogsForEntity(String entityType, String entityId) {
-        return auditTable.scan().items().stream()
-                .filter(l -> entityType.equals(l.getEntityType()) && entityId.equals(l.getEntityId()))
-                .sorted(Comparator.comparing(AuditLog::getTimestamp).reversed())
-                .toList();
+        // Use EntityIndex GSI to query by entityId, then filter by entityType in memory
+        return entityIndex.query(QueryConditional.keyEqualTo(
+                Key.builder().partitionValue(entityId).build()))
+            .stream()
+            .flatMap(page -> page.items().stream())
+            .filter(l -> entityType.equals(l.getEntityType()))
+            .sorted(Comparator.comparing(AuditLog::getTimestamp).reversed())
+            .toList();
     }
 
     /**
@@ -133,10 +147,13 @@ public class AuditService {
      */
     public List<AuditLog> getLogsForUser(String userId, int limit) {
         int safeLimit = Math.clamp(limit, 1, 200);
-        return auditTable.scan().items().stream()
-                .filter(l -> userId.equals(l.getUserId()))
-                .sorted(Comparator.comparing(AuditLog::getTimestamp).reversed())
-                .limit(safeLimit)
-                .toList();
+        // Use UserIndex GSI to query by userId instead of scanning the entire table
+        return userIndex.query(QueryConditional.keyEqualTo(
+                Key.builder().partitionValue(userId).build()))
+            .stream()
+            .flatMap(page -> page.items().stream())
+            .sorted(Comparator.comparing(AuditLog::getTimestamp).reversed())
+            .limit(safeLimit)
+            .toList();
     }
 }

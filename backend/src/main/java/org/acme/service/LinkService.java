@@ -6,15 +6,21 @@ import org.acme.model.Link;
 import org.acme.model.LinkList;
 import org.jboss.logging.Logger;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
+import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.TableSchema;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
+import software.amazon.awssdk.enhanced.dynamodb.model.ReadBatch;
 
 import jakarta.annotation.PostConstruct;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import software.amazon.awssdk.enhanced.dynamodb.EnhancedType;
 import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.primaryPartitionKey;
+import static software.amazon.awssdk.enhanced.dynamodb.mapper.StaticAttributeTags.secondaryPartitionKey;
 import java.time.Instant;
 
 @ApplicationScoped
@@ -24,6 +30,7 @@ public class LinkService {
     private final DynamoDbEnhancedClient enhancedClient;
     private DynamoDbTable<Link> linkTable;
     private DynamoDbTable<LinkList> listTable;
+    private DynamoDbIndex<LinkList> ownerIndex;
 
     @Inject
     public LinkService(DynamoDbEnhancedClient enhancedClient) {
@@ -38,7 +45,8 @@ public class LinkService {
             .tags(primaryPartitionKey()))
         .addAttribute(String.class, a -> a.name("owner")
             .getter(LinkList::getOwner)
-            .setter(LinkList::setOwner))
+            .setter(LinkList::setOwner)
+            .tags(secondaryPartitionKey("OwnerIndex")))
         .addAttribute(String.class, a -> a.name("name")
             .getter(LinkList::getName)
             .setter(LinkList::setName))
@@ -83,10 +91,10 @@ public class LinkService {
     void init() {
         linkTable = enhancedClient.table("Links", LINK_SCHEMA);
         listTable = enhancedClient.table("Lists", LIST_SCHEMA);
+        ownerIndex = listTable.index("OwnerIndex");
 
         // Create tables if not exist (mostly for local development)
         try {
-            // For DynamoDB Enhanced, we can just call createTable() and catch if it exists
             linkTable.createTable();
             listTable.createTable();
         } catch (Exception e) {
@@ -95,14 +103,17 @@ public class LinkService {
     }
 
     public List<LinkList> getListsByOwner(String owner) {
-        // In a real app we would use a GSI. For now with small data, scan filter is acceptable or strict GSI.
-        // Let's iterate all scan results for simplicity in this prototype.
-        return listTable.scan().items().stream()
-                .filter(l -> owner.equals(l.getOwner()))
-                .toList();
+        // Use OwnerIndex GSI to query by owner instead of scanning the entire table
+        return ownerIndex.query(QueryConditional.keyEqualTo(
+                Key.builder().partitionValue(owner).build()))
+            .stream()
+            .flatMap(page -> page.items().stream())
+            .toList();
     }
     
     public List<LinkList> getPublishedLists() {
+        // No GSI for published flag — scan is acceptable since published lists are a small subset
+        // and this is called infrequently (homepage). A GSI with sparse index could optimize later.
         return listTable.scan().items().stream()
                 .filter(l -> Boolean.TRUE.equals(l.getPublished()))
                 .toList();
@@ -152,9 +163,19 @@ public class LinkService {
     }
 
     public List<Link> getLinksByIds(List<String> ids) {
-        // BatchGet would be better
-        return ids.stream()
-            .map(this::getLink)
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        // Use BatchGetItem for efficient multi-key retrieval (max 100 per batch)
+        ReadBatch.Builder<Link> batchBuilder = ReadBatch.builder(Link.class)
+            .mappedTableResource(linkTable);
+        for (String id : ids) {
+            batchBuilder.addGetItem(Key.builder().partitionValue(id).build());
+        }
+        return enhancedClient.batchGetItem(r -> r.addReadBatch(batchBuilder.build()))
+            .resultsForTable(linkTable)
+            .stream()
+            .filter(Objects::nonNull)
             .toList();
     }
 }
