@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class LoginPolicyServiceTest {
 
     @Inject
-    LoginPolicyService loginPolicyService;
+    LoginPolicyService loginPolicyService; // NOSONAR java:S6813 - @Inject field injection is standard in @QuarkusTest
 
     @Test
     void disallowedUsernamesAreBlockedRegardlessOfDomain() {
