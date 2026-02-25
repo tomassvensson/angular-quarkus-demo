@@ -150,9 +150,9 @@ export class VoteAnalyticsComponent implements OnInit {
   readonly sortedAnalytics = computed(() => {
     const all = this.analyticsData();
     const start = this.page() * this.pageSize;
-    return all
-      .sort((a, b) => b.analytics.voteCount - a.analytics.voteCount || b.analytics.averageRating - a.analytics.averageRating)
-      .slice(start, start + this.pageSize);
+    const sorted = [...all];
+    sorted.sort((a, b) => b.analytics.voteCount - a.analytics.voteCount || b.analytics.averageRating - a.analytics.averageRating);
+    return sorted.slice(start, start + this.pageSize);
   });
 
   readonly totalPages = computed(() => Math.max(1, Math.ceil(this.analyticsData().length / this.pageSize)));
