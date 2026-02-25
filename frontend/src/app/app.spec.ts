@@ -7,8 +7,20 @@ import { routes } from './app.routes';
 
 describe('App', () => {
   let httpMock: HttpTestingController;
+  let originalWs: typeof WebSocket;
 
   beforeEach(async () => {
+    // Mock WebSocket so tests don't create real connections
+    originalWs = (globalThis as any).WebSocket;
+    (globalThis as any).WebSocket = function MockWebSocket(this: any) {
+      this.onopen = null;
+      this.onclose = null;
+      this.onmessage = null;
+      this.onerror = null;
+      this.close = () => {};
+      this.readyState = 1;
+    };
+
     // Mock matchMedia for ThemeService
     if (!globalThis.matchMedia) {
       globalThis.matchMedia = (query: string) => ({
@@ -32,6 +44,7 @@ describe('App', () => {
   });
 
   afterEach(() => {
+    (globalThis as any).WebSocket = originalWs;
     httpMock.verify();
   });
 
