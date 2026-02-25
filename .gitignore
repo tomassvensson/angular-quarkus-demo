@@ -99,3 +99,4 @@ server.test.pem
 server.test.pem.key
 server.test.pem.crt
 **/docs/*.md
+prompts.txt

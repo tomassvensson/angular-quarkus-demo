@@ -60,6 +60,17 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'profile.passwordChangeFailed': 'Failed to change password: {error}', // NOSONAR typescript:S2068
     'profile.passwordRequired': 'All password fields are required.', // NOSONAR typescript:S2068
 
+    // Profile Picture
+    'profilePicture.title': 'Profile Picture',
+    'profilePicture.upload': 'Upload Picture',
+    'profilePicture.remove': 'Remove Picture',
+    'profilePicture.removeConfirm': 'Are you sure you want to remove your profile picture?',
+    'profilePicture.uploaded': 'Profile picture uploaded successfully.',
+    'profilePicture.removed': 'Profile picture removed.',
+    'profilePicture.uploadFailed': 'Failed to upload profile picture.',
+    'profilePicture.tooLarge': 'File is too large. Maximum size is 5 MB.',
+    'profilePicture.hint': 'Upload a PNG, JPEG, GIF, or WebP image (max 5 MB). Falls back to Gravatar.',
+
     // MFA
     'mfa.title': 'Multi-Factor Authentication',
     'mfa.trustedDevices': 'Trusted Devices',
@@ -284,6 +295,17 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'profile.passwordChangeFailed': 'Passwort konnte nicht geändert werden: {error}', // NOSONAR typescript:S2068
     'profile.passwordRequired': 'Alle Passwortfelder sind erforderlich.', // NOSONAR typescript:S2068
 
+    // Profile Picture
+    'profilePicture.title': 'Profilbild',
+    'profilePicture.upload': 'Bild hochladen',
+    'profilePicture.remove': 'Bild entfernen',
+    'profilePicture.removeConfirm': 'Sind Sie sicher, dass Sie Ihr Profilbild entfernen möchten?',
+    'profilePicture.uploaded': 'Profilbild erfolgreich hochgeladen.',
+    'profilePicture.removed': 'Profilbild entfernt.',
+    'profilePicture.uploadFailed': 'Profilbild konnte nicht hochgeladen werden.',
+    'profilePicture.tooLarge': 'Die Datei ist zu groß. Maximale Größe ist 5 MB.',
+    'profilePicture.hint': 'Laden Sie ein PNG-, JPEG-, GIF- oder WebP-Bild hoch (max. 5 MB). Fällt auf Gravatar zurück.',
+
     // MFA
     'mfa.title': 'Multi-Faktor-Authentifizierung',
     'mfa.trustedDevices': 'Vertrauenswürdige Geräte',
@@ -507,6 +529,17 @@ const TRANSLATIONS: Record<Language, Record<string, string>> = {
     'profile.passwordChanged': 'Lösenordet har ändrats.', // NOSONAR typescript:S2068
     'profile.passwordChangeFailed': 'Kunde inte ändra lösenord: {error}', // NOSONAR typescript:S2068
     'profile.passwordRequired': 'Alla lösenordsfält krävs.', // NOSONAR typescript:S2068
+
+    // Profile Picture
+    'profilePicture.title': 'Profilbild',
+    'profilePicture.upload': 'Ladda upp bild',
+    'profilePicture.remove': 'Ta bort bild',
+    'profilePicture.removeConfirm': 'Är du säker på att du vill ta bort din profilbild?',
+    'profilePicture.uploaded': 'Profilbild uppladdad.',
+    'profilePicture.removed': 'Profilbild borttagen.',
+    'profilePicture.uploadFailed': 'Kunde inte ladda upp profilbild.',
+    'profilePicture.tooLarge': 'Filen är för stor. Maximal storlek är 5 MB.',
+    'profilePicture.hint': 'Ladda upp en PNG-, JPEG-, GIF- eller WebP-bild (max 5 MB). Faller tillbaka till Gravatar.',
 
     // MFA
     'mfa.title': 'Flerfaktorsautentisering',

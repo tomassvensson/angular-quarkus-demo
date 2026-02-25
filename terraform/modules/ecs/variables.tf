@@ -79,6 +79,11 @@ variable "aws_region" {
   default     = "eu-central-1"
 }
 
+variable "profile_pictures_bucket_arn" {
+  description = "ARN of the S3 bucket for profile pictures"
+  type        = string
+}
+
 variable "health_check_path" {
   description = "Health check endpoint path"
   type        = string

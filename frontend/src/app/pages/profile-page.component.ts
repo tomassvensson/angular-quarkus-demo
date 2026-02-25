@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@ang
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { GraphqlApiService, CognitoUser, TrustedDevice, MfaSetupResponse } from '../services/graphql-api.service';
+import { HttpClient } from '@angular/common/http';
+import { GraphqlApiService, CognitoUser, TrustedDevice, MfaSetupResponse, ProfilePictureInfo } from '../services/graphql-api.service';
 import { I18nService } from '../services/i18n.service';
 
 @Component({
@@ -39,6 +40,46 @@ import { I18nService } from '../services/i18n.service';
               }
             </div>
           </div>
+        </div>
+
+        <!-- Profile Picture Section -->
+        <div class="profile-picture-section">
+          <h3>{{ i18n.t('profilePicture.title') }}</h3>
+
+          @if (profilePictureError()) {
+            <p class="error">{{ profilePictureError() }}</p>
+          }
+          @if (profilePictureSuccess()) {
+            <p class="success">{{ profilePictureSuccess() }}</p>
+          }
+
+          <div class="profile-picture-preview">
+            @if (profilePictureUrl()) {
+              <img class="avatar-large" [src]="profilePictureUrl()" [alt]="i18n.t('profilePicture.title')" width="96" height="96" />
+            } @else {
+              <div class="avatar-placeholder">
+                <span>{{ user()?.username?.charAt(0)?.toUpperCase() }}</span>
+              </div>
+            }
+          </div>
+
+          <div class="profile-picture-actions">
+            @if (profilePictureInfo()?.uploadEnabled) {
+              <label class="btn btn-primary upload-label" [class.disabled]="uploadingPicture()">
+                {{ i18n.t('profilePicture.upload') }}
+                <input type="file" accept="image/png,image/jpeg,image/gif,image/webp"
+                       (change)="onFileSelected($event)" class="file-input"
+                       [attr.aria-label]="i18n.t('profilePicture.upload')" />
+              </label>
+            }
+            @if (profilePictureInfo()?.source === 'uploaded') {
+              <button class="btn btn-danger" (click)="removeProfilePicture()" [disabled]="uploadingPicture()">
+                {{ i18n.t('profilePicture.remove') }}
+              </button>
+            }
+          </div>
+
+          <p class="muted profile-picture-hint">{{ i18n.t('profilePicture.hint') }}</p>
         </div>
 
         <!-- Password Change Section -->
@@ -190,6 +231,55 @@ import { I18nService } from '../services/i18n.service';
   styles: [`
     .detail-card { margin-bottom: 1rem; }
     .group-pill { background: var(--color-pill-bg); color: var(--color-pill-text); border: 1px solid var(--color-pill-border); padding: 4px 8px; border-radius: 4px; margin-right: 8px; display: inline-block; }
+    .profile-picture-section {
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--color-border);
+    }
+    .profile-picture-section h3 { margin-bottom: 1rem; }
+    .profile-picture-preview { margin-bottom: 1rem; }
+    .avatar-large {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid var(--color-panel-border);
+    }
+    .avatar-placeholder {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: var(--color-pill-bg);
+      border: 3px solid var(--color-panel-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--color-pill-text);
+    }
+    .profile-picture-actions {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-bottom: 0.5rem;
+    }
+    .upload-label {
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+    }
+    .upload-label.disabled { opacity: 0.6; cursor: not-allowed; }
+    .file-input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    .profile-picture-hint { font-size: 0.85rem; margin-top: 0.5rem; }
     .btn-danger {
       background-color: var(--color-error);
       color: white;
@@ -288,6 +378,7 @@ import { I18nService } from '../services/i18n.service';
 })
 export class ProfilePageComponent implements OnInit {
   private readonly api = inject(GraphqlApiService);
+  private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
   protected readonly i18n = inject(I18nService);
@@ -298,6 +389,13 @@ export class ProfilePageComponent implements OnInit {
   readonly passwordSuccess = signal(false);
   readonly passwordError = signal('');
   readonly changingPassword = signal(false);
+
+  // Profile picture state
+  readonly profilePictureUrl = signal<string | null>(null);
+  readonly profilePictureInfo = signal<ProfilePictureInfo | null>(null);
+  readonly profilePictureError = signal('');
+  readonly profilePictureSuccess = signal('');
+  readonly uploadingPicture = signal(false);
 
   // MFA state
   readonly trustedDevices = signal<TrustedDevice[]>([]);
@@ -329,6 +427,7 @@ export class ProfilePageComponent implements OnInit {
   ngOnInit() {
     this.load();
     this.loadTrustedDevices();
+    this.loadProfilePicture();
   }
 
   load() {
@@ -476,6 +575,92 @@ export class ProfilePageComponent implements OnInit {
       error: (err: Error) => {
         this.mfaPrefError.set(this.i18n.t('mfa.preferencesFailed', { error: err.message }));
         this.savingMfaPref.set(false);
+      }
+    });
+  }
+
+  loadProfilePicture(): void {
+    this.api.getProfilePictureInfo().subscribe({
+      next: (info) => {
+        this.profilePictureInfo.set(info);
+        this.profilePictureUrl.set(info.url || null);
+      },
+      error: () => {
+        // Profile picture info not available — not critical
+        this.profilePictureInfo.set(null);
+      }
+    });
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    if (!file) return;
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      this.profilePictureError.set(this.i18n.t('profilePicture.tooLarge'));
+      return;
+    }
+
+    this.uploadingPicture.set(true);
+    this.profilePictureError.set('');
+    this.profilePictureSuccess.set('');
+
+    // Step 1: Get presigned upload URL
+    this.api.getProfilePictureUploadUrl().subscribe({
+      next: (response) => {
+        // Step 2: Upload file to S3 via presigned URL
+        this.http.put(response.uploadUrl, file, {
+          headers: { 'Content-Type': file.type }
+        }).subscribe({
+          next: () => {
+            // Step 3: Confirm upload to backend
+            this.api.confirmProfilePictureUpload().subscribe({
+              next: () => {
+                this.profilePictureSuccess.set(this.i18n.t('profilePicture.uploaded'));
+                this.uploadingPicture.set(false);
+                this.loadProfilePicture();
+                // Clear file input
+                input.value = '';
+              },
+              error: (err: Error) => {
+                this.profilePictureError.set(err.message);
+                this.uploadingPicture.set(false);
+              }
+            });
+          },
+          error: (err: Error) => {
+            this.profilePictureError.set(this.i18n.t('profilePicture.uploadFailed'));
+            this.uploadingPicture.set(false);
+            console.error('S3 upload failed:', err.message);
+          }
+        });
+      },
+      error: (err: Error) => {
+        this.profilePictureError.set(err.message);
+        this.uploadingPicture.set(false);
+      }
+    });
+  }
+
+  removeProfilePicture(): void {
+    if (!confirm(this.i18n.t('profilePicture.removeConfirm'))) return;
+
+    this.uploadingPicture.set(true);
+    this.profilePictureError.set('');
+    this.profilePictureSuccess.set('');
+
+    this.api.deleteProfilePicture().subscribe({
+      next: () => {
+        this.profilePictureSuccess.set(this.i18n.t('profilePicture.removed'));
+        this.uploadingPicture.set(false);
+        this.loadProfilePicture();
+      },
+      error: (err: Error) => {
+        this.profilePictureError.set(err.message);
+        this.uploadingPicture.set(false);
       }
     });
   }
