@@ -190,3 +190,20 @@ resource "aws_dynamodb_table" "audit_logs" {
 
   tags = var.tags
 }
+
+resource "aws_dynamodb_table" "user_settings" {
+  name         = "${local.prefix}-UserSettings"
+  billing_mode = var.billing_mode
+  hash_key     = "userId"
+
+  attribute {
+    name = "userId"
+    type = "S"
+  }
+
+  point_in_time_recovery {
+    enabled = var.enable_point_in_time_recovery
+  }
+
+  tags = var.tags
+}

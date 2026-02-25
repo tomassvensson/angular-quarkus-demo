@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ProfilePageComponent } from './profile-page.component';
 import { GraphqlApiService } from '../services/graphql-api.service';
 import { Router } from '@angular/router';
@@ -35,7 +37,11 @@ describe('ProfilePageComponent', () => {
       forgetDevice: vi.fn(),
       setupTotp: vi.fn(),
       verifyTotp: vi.fn(),
-      setMfaPreference: vi.fn()
+      setMfaPreference: vi.fn(),
+      getProfilePictureInfo: vi.fn(),
+      getProfilePictureUploadUrl: vi.fn(),
+      confirmProfilePictureUpload: vi.fn(),
+      deleteProfilePicture: vi.fn()
     };
     routerSpy = {
       navigate: vi.fn()
@@ -50,10 +56,16 @@ describe('ProfilePageComponent', () => {
     apiSpy.setupTotp.mockReturnValue(of({ secretCode: 'ABCDEF', qrCodeUri: 'otpauth://totp/test' }));
     apiSpy.verifyTotp.mockReturnValue(of(true));
     apiSpy.setMfaPreference.mockReturnValue(of(true));
+    apiSpy.getProfilePictureInfo.mockReturnValue(of({ url: 'https://gravatar.com/avatar/test', source: 'gravatar', uploadEnabled: true }));
+    apiSpy.getProfilePictureUploadUrl.mockReturnValue(of({ uploadUrl: 'https://s3.example.com/upload' }));
+    apiSpy.confirmProfilePictureUpload.mockReturnValue(of({ status: 'confirmed' }));
+    apiSpy.deleteProfilePicture.mockReturnValue(of({ status: 'deleted' }));
 
     await TestBed.configureTestingModule({
       imports: [ProfilePageComponent],
       providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
         { provide: GraphqlApiService, useValue: apiSpy },
         { provide: Router, useValue: routerSpy }
       ]
@@ -233,7 +245,8 @@ describe('ProfilePageComponent', () => {
     component.changingPassword.set(true);
     fixture.detectChanges();
 
-    const submitBtn = fixture.nativeElement.querySelector('.btn-primary') as HTMLButtonElement;
+    const passwordSection = fixture.nativeElement.querySelector('.password-section');
+    const submitBtn = passwordSection?.querySelector('.btn-primary') as HTMLButtonElement;
     expect(submitBtn.disabled).toBe(true);
   });
 

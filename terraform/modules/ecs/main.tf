@@ -120,6 +120,28 @@ resource "aws_iam_role_policy" "ecs_task_cloudwatch" {
   })
 }
 
+resource "aws_iam_role_policy" "ecs_task_s3_profile_pictures" {
+  name = "${local.prefix}-s3-profile-pictures"
+  role = aws_iam_role.ecs_task.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = [
+        "s3:GetObject",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:HeadBucket"
+      ]
+      Resource = [
+        var.profile_pictures_bucket_arn,
+        "${var.profile_pictures_bucket_arn}/*"
+      ]
+    }]
+  })
+}
+
 # --- Security Groups ---
 resource "aws_security_group" "alb" {
   name        = "${local.prefix}-alb-sg"

@@ -19,3 +19,8 @@ output "alb_listener_arn" {
   description = "HTTPS listener ARN (attach ACM cert here)"
   value       = aws_lb_listener.http.arn
 }
+
+output "alarms_sns_topic_arn" {
+  description = "SNS topic ARN for CloudWatch alarms"
+  value       = aws_sns_topic.alarms.arn
+}

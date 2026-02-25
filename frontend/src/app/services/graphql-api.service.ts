@@ -6,6 +6,21 @@ export interface CurrentUser {
   username: string;
   email: string;
   roles: string[];
+  profilePictureUrl?: string;
+}
+
+export interface UserSettings {
+  userId: string;
+  profilePictureSource: string;
+  profilePictureS3Key: string | null;
+  theme: string;
+  locale: string;
+}
+
+export interface ProfilePictureInfo {
+  url: string;
+  source: string;
+  uploadEnabled: boolean;
 }
 
 export interface CognitoUser {
@@ -54,8 +69,58 @@ export class GraphqlApiService {
   private readonly endpoint = 'http://localhost:8080/api/v1/graphql'; // NOSONAR
 
   me(): Observable<CurrentUser> {
-    const query = `query { me { username email roles } }`;
+    const query = `query { me { username email roles profilePictureUrl } }`;
     return this.execute<{ me: CurrentUser }>(query).pipe(map((result) => result.me));
+  }
+
+  userSettings(): Observable<UserSettings> {
+    const query = `query { userSettings { userId profilePictureSource profilePictureS3Key theme locale } }`;
+    return this.execute<{ userSettings: UserSettings }>(query).pipe(map((result) => result.userSettings));
+  }
+
+  updateUserSettings(input: { theme?: string; locale?: string }): Observable<UserSettings> {
+    const query = `mutation UpdateUserSettings($input: UserSettingsInput!) {
+      updateUserSettings(input: $input) { userId profilePictureSource profilePictureS3Key theme locale }
+    }`;
+    return this.execute<{ updateUserSettings: UserSettings }>(query, { input }).pipe(
+      map((result) => result.updateUserSettings)
+    );
+  }
+
+  getProfilePictureUploadUrl(): Observable<{ uploadUrl: string }> {
+    return this.http.get<{ uploadUrl: string }>(
+      'http://localhost:8080/api/v1/profile-picture/upload-url', // NOSONAR
+      { withCredentials: true }
+    );
+  }
+
+  confirmProfilePictureUpload(): Observable<{ status: string }> {
+    return this.http.post<{ status: string }>(
+      'http://localhost:8080/api/v1/profile-picture/confirm-upload', // NOSONAR
+      {},
+      { withCredentials: true }
+    );
+  }
+
+  getProfilePictureInfo(): Observable<ProfilePictureInfo> {
+    return this.http.get<ProfilePictureInfo>(
+      'http://localhost:8080/api/v1/profile-picture/url', // NOSONAR
+      { withCredentials: true }
+    );
+  }
+
+  getProfilePictureUrlForUser(username: string): Observable<{ url: string }> {
+    return this.http.get<{ url: string }>(
+      `http://localhost:8080/api/v1/profile-picture/url/${encodeURIComponent(username)}`, // NOSONAR
+      { withCredentials: true }
+    );
+  }
+
+  deleteProfilePicture(): Observable<{ status: string }> {
+    return this.http.delete<{ status: string }>(
+      'http://localhost:8080/api/v1/profile-picture', // NOSONAR
+      { withCredentials: true }
+    );
   }
 
   users(page: number, size: number, sortBy: string, direction: 'asc' | 'desc'): Observable<CognitoUserPage> {
