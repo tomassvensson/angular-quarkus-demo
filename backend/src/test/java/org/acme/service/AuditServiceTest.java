@@ -4,9 +4,11 @@ import org.acme.model.AuditLog;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbIndex;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
 import software.amazon.awssdk.enhanced.dynamodb.model.Page;
+import software.amazon.awssdk.enhanced.dynamodb.model.QueryConditional;
 
 import java.lang.reflect.Field;
 import java.time.Instant;
@@ -30,6 +32,10 @@ class AuditServiceTest {
     private AuditService service;
     @SuppressWarnings("unchecked")
     private final DynamoDbTable<AuditLog> mockTable = mock(DynamoDbTable.class);
+    @SuppressWarnings("unchecked")
+    private final DynamoDbIndex<AuditLog> mockEntityIndex = mock(DynamoDbIndex.class);
+    @SuppressWarnings("unchecked")
+    private final DynamoDbIndex<AuditLog> mockUserIndex = mock(DynamoDbIndex.class);
 
     @BeforeEach
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -38,10 +44,18 @@ class AuditServiceTest {
         when(mockClient.table(any(String.class), any())).thenReturn((DynamoDbTable) mockTable);
         service = new AuditService(mockClient);
 
-        // Set the auditTable field via reflection
+        // Set the auditTable, entityIndex, and userIndex fields via reflection
         Field tableField = AuditService.class.getDeclaredField("auditTable");
         tableField.setAccessible(true);
         tableField.set(service, mockTable);
+
+        Field entityIndexField = AuditService.class.getDeclaredField("entityIndex");
+        entityIndexField.setAccessible(true);
+        entityIndexField.set(service, mockEntityIndex);
+
+        Field userIndexField = AuditService.class.getDeclaredField("userIndex");
+        userIndexField.setAccessible(true);
+        userIndexField.set(service, mockUserIndex);
     }
 
     @Test
@@ -125,11 +139,14 @@ class AuditServiceTest {
 
         AuditLog noMatch = makeLog("2", Instant.now());
         noMatch.setEntityType("LINK");
-        noMatch.setEntityId("link-1");
+        noMatch.setEntityId("list-1"); // same entityId but different entityType
 
-        PageIterable<AuditLog> pageIterable = mock(PageIterable.class);
-        when(mockTable.scan()).thenReturn(pageIterable);
-        when(pageIterable.items()).thenReturn(() -> List.of(match, noMatch).iterator());
+        // Mock the EntityIndex GSI query
+        software.amazon.awssdk.enhanced.dynamodb.model.PageIterable<AuditLog> indexIterable = mock(software.amazon.awssdk.enhanced.dynamodb.model.PageIterable.class);
+        when(mockEntityIndex.query(any(QueryConditional.class))).thenReturn(indexIterable);
+        Page<AuditLog> page = mock(Page.class);
+        when(page.items()).thenReturn(List.of(match, noMatch));
+        when(indexIterable.stream()).thenReturn(Stream.of(page));
 
         List<AuditLog> result = service.getLogsForEntity("LIST", "list-1");
         assertEquals(1, result.size());
@@ -145,9 +162,12 @@ class AuditServiceTest {
         AuditLog noMatch = makeLog("2", Instant.now());
         noMatch.setUserId("bob");
 
-        PageIterable<AuditLog> pageIterable = mock(PageIterable.class);
-        when(mockTable.scan()).thenReturn(pageIterable);
-        when(pageIterable.items()).thenReturn(() -> List.of(match, noMatch).iterator());
+        // Mock the UserIndex GSI query — only returns items matching the partition key (alice)
+        software.amazon.awssdk.enhanced.dynamodb.model.PageIterable<AuditLog> indexIterable = mock(software.amazon.awssdk.enhanced.dynamodb.model.PageIterable.class);
+        when(mockUserIndex.query(any(QueryConditional.class))).thenReturn(indexIterable);
+        Page<AuditLog> page = mock(Page.class);
+        when(page.items()).thenReturn(List.of(match));
+        when(indexIterable.stream()).thenReturn(Stream.of(page));
 
         List<AuditLog> result = service.getLogsForUser("alice", 10);
         assertEquals(1, result.size());
@@ -164,9 +184,12 @@ class AuditServiceTest {
         AuditLog c = makeLog("3", Instant.parse("2025-12-01T00:00:00Z"));
         c.setUserId("alice");
 
-        PageIterable<AuditLog> pageIterable = mock(PageIterable.class);
-        when(mockTable.scan()).thenReturn(pageIterable);
-        when(pageIterable.items()).thenReturn(() -> List.of(a, b, c).iterator());
+        // Mock the UserIndex GSI query
+        software.amazon.awssdk.enhanced.dynamodb.model.PageIterable<AuditLog> indexIterable = mock(software.amazon.awssdk.enhanced.dynamodb.model.PageIterable.class);
+        when(mockUserIndex.query(any(QueryConditional.class))).thenReturn(indexIterable);
+        Page<AuditLog> page = mock(Page.class);
+        when(page.items()).thenReturn(List.of(a, b, c));
+        when(indexIterable.stream()).thenReturn(Stream.of(page));
 
         List<AuditLog> result = service.getLogsForUser("alice", 2);
         assertEquals(2, result.size());

@@ -135,6 +135,11 @@ resource "aws_dynamodb_table" "notifications" {
     projection_type = "ALL"
   }
 
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
+
   point_in_time_recovery {
     enabled = var.enable_point_in_time_recovery
   }
@@ -172,6 +177,11 @@ resource "aws_dynamodb_table" "audit_logs" {
     name            = "UserIndex"
     hash_key        = "userId"
     projection_type = "ALL"
+  }
+
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
   }
 
   point_in_time_recovery {

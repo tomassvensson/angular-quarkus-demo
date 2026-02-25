@@ -9,6 +9,7 @@
       @if (isSignedIn()) {
         <a routerLink="/public-lists" routerLinkActive="active">{{ i18n.t('nav.publicLists') }}</a>
         <a routerLink="/my-lists" routerLinkActive="active">{{ i18n.t('nav.myLists') }}</a>
+        <a routerLink="/analytics" routerLinkActive="active">{{ i18n.t('nav.analytics') }}</a>
         <a routerLink="/profile" routerLinkActive="active">{{ i18n.t('nav.profile') }}</a>
         <app-notification-bell />
       }
