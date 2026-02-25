@@ -6,6 +6,7 @@ public class CurrentUserView {
     private String username;
     private String email;
     private List<String> roles;
+    private String profilePictureUrl;
 
     public String getUsername() {
         return username;
@@ -29,5 +30,13 @@ public class CurrentUserView {
 
     public void setRoles(List<String> roles) {
         this.roles = roles;
+    }
+
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
     }
 }
