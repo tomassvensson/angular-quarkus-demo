@@ -4,7 +4,7 @@ This directory contains Terraform configurations to deploy the Angular + Quarkus
 
 ## Architecture
 
-```
+```text
 ┌─────────────┐     ┌──────────────┐     ┌────────────────┐
 │  CloudFront  │────▶│   S3 Bucket   │     │   Cognito       │
 │  (CDN)       │     │  (Frontend)   │     │  (User Pool)    │
@@ -26,7 +26,7 @@ This directory contains Terraform configurations to deploy the Angular + Quarkus
 ## Modules
 
 | Module | Description |
-|--------|-------------|
+| ------ | ----------- |
 | `cognito` | AWS Cognito User Pool, groups, app client |
 | `dynamodb` | DynamoDB tables (Links, Lists, Comments, Votes, Notifications, AuditLogs) |
 | `s3-cloudfront` | S3 bucket for Angular SPA + CloudFront distribution |
@@ -35,7 +35,7 @@ This directory contains Terraform configurations to deploy the Angular + Quarkus
 ## Environments
 
 | Environment | Description |
-|-------------|-------------|
+| ----------- | ----------- |
 | `dev` | Development environment with minimal resources |
 | `prod` | Production environment with HA and autoscaling |
 
