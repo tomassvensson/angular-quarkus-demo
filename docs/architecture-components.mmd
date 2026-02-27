@@ -1,0 +1,105 @@
+graph LR
+    subgraph Frontend["Angular 21 Frontend"]
+        direction TB
+        
+        subgraph FPages["Page Components"]
+            Home["HomePageComponent<br/>README display"]
+            MyLists["MyListsComponent<br/>User's link lists"]
+            ListDetail["ListDetailComponent<br/>Links, votes, comments"]
+            PublicLists["PublicListsComponent<br/>Browse published lists"]
+            Profile["ProfilePageComponent<br/>Password, MFA, picture"]
+            AdminUsers["AdminUsersPageComponent<br/>User management"]
+            UserEdit["UserEditPageComponent<br/>Role editing"]
+            Notifications["NotificationsPageComponent<br/>User notifications"]
+            VoteAnalytics["VoteAnalyticsPageComponent<br/>Trending dashboard"]
+        end
+
+        subgraph FComponents["Shared Components"]
+            StarRating["StarRatingComponent<br/>5-star voting"]
+            Comments["CommentsSectionComponent<br/>Threaded comments"]
+            NotifBell["NotificationBellComponent<br/>Unread counter"]
+            Toast["ToastContainerComponent<br/>Error/success alerts"]
+            ThemeSwitch["Theme/i18n Selectors<br/>Dark/Light/System"]
+        end
+
+        subgraph FServices["Services"]
+            GraphQLSvc["GraphqlApiService<br/>Auth + Admin API"]
+            LinkClientSvc["LinkService<br/>List/Link CRUD"]
+            SocialSvc["SocialService<br/>Votes, Comments"]
+            NotifClientSvc["NotificationService<br/>WebSocket + REST"]
+            I18nSvc["I18nService<br/>EN/DE/SV translations"]
+            ThemeSvc["ThemeService<br/>Dark mode persistence"]
+            LogSvc["LogCollectorService<br/>Browser log batching"]
+            ProfilePicSvc["ProfilePictureService<br/>S3 presigned URLs"]
+        end
+
+        subgraph FInterceptors["Interceptors"]
+            ErrInterceptor["ErrorInterceptor<br/>401 → re-auth redirect"]
+        end
+    end
+
+    subgraph Backend["Quarkus 3.31 Backend"]
+        direction TB
+
+        subgraph BResources["API Resources"]
+            UserGQL["UserGraphQLApi<br/>me, listUsers, updateUser"]
+            LinkGQL["LinkGraphQLResource<br/>CRUD, publish/unpublish"]
+            SocialGQL["SocialGraphQLResource<br/>votes, comments, notifications"]
+            LogREST["LogIngestionResource<br/>POST /api/v1/logs"]
+            LoginREST["LoginResource<br/>OIDC redirect"]
+            LogoutREST["LogoutResource<br/>Session cleanup"]
+            ProfileGQL["ProfilePictureResource<br/>Upload/download URLs"]
+        end
+
+        subgraph BServices["Business Services"]
+            BLinkSvc["LinkService"]
+            BCognitoSvc["CognitoAdminService"]
+            BVoteSvc["VoteService"]
+            BCommentSvc["CommentService"]
+            BNotifSvc["NotificationService"]
+            BAuditSvc["AuditService"]
+            BProfileSvc["ProfilePictureService"]
+            BCWSvc["CloudWatchLogService"]
+            BSettingsSvc["UserSettingsService"]
+            BLoginPolicySvc["LoginPolicyService"]
+            BAlarmSvc["CloudWatchAlarmService"]
+        end
+
+        subgraph BSecurity["Security"]
+            SecFilter["SecurityHeadersFilter<br/>CSP, HSTS, X-Frame"]
+            WebSocketSvc["NotificationWebSocket<br/>Real-time push"]
+        end
+    end
+
+    GraphQLSvc -->|"GraphQL"| UserGQL
+    GraphQLSvc -->|"GraphQL"| LinkGQL
+    SocialSvc -->|"GraphQL"| SocialGQL
+    LinkClientSvc -->|"GraphQL"| LinkGQL
+    NotifClientSvc -->|"WebSocket"| WebSocketSvc
+    LogSvc -->|"REST"| LogREST
+    ProfilePicSvc -->|"GraphQL"| ProfileGQL
+
+    UserGQL --> BCognitoSvc
+    UserGQL --> BSettingsSvc
+    LinkGQL --> BLinkSvc
+    SocialGQL --> BVoteSvc
+    SocialGQL --> BCommentSvc
+    SocialGQL --> BNotifSvc
+    LogREST --> BCWSvc
+    ProfileGQL --> BProfileSvc
+
+    classDef page fill:#DD0031,stroke:#a80025,color:white
+    classDef component fill:#C3002F,stroke:#8f0023,color:white
+    classDef service fill:#1976D2,stroke:#1565C0,color:white
+    classDef interceptor fill:#7B1FA2,stroke:#6A1B9A,color:white
+    classDef resource fill:#4695EB,stroke:#2d7bd5,color:white
+    classDef bservice fill:#0277BD,stroke:#01579B,color:white
+    classDef security fill:#2E7D32,stroke:#1B5E20,color:white
+
+    class Home,MyLists,ListDetail,PublicLists,Profile,AdminUsers,UserEdit,Notifications,VoteAnalytics page
+    class StarRating,Comments,NotifBell,Toast,ThemeSwitch component
+    class GraphQLSvc,LinkClientSvc,SocialSvc,NotifClientSvc,I18nSvc,ThemeSvc,LogSvc,ProfilePicSvc service
+    class ErrInterceptor interceptor
+    class UserGQL,LinkGQL,SocialGQL,LogREST,LoginREST,LogoutREST,ProfileGQL resource
+    class BLinkSvc,BCognitoSvc,BVoteSvc,BCommentSvc,BNotifSvc,BAuditSvc,BProfileSvc,BCWSvc,BSettingsSvc,BLoginPolicySvc,BAlarmSvc bservice
+    class SecFilter,WebSocketSvc security

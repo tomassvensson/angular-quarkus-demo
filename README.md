@@ -41,44 +41,15 @@ Full-stack demo application with:
 
 ### System Overview
 
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│                          Browser                                    │
-│  Angular 21 + Tailwind CSS  (http://localhost:4200)                 │
-│  ┌───────────┬──────────────┬──────────────┬──────────────────────┐ │
-│  │ Home Page │ My Lists     │ Public Lists │ Admin Users (admin)  │ │
-│  │           │ (CRUD links) │ (paginated)  │ (role management)    │ │
-│  └───────────┴──────────────┴──────────────┴──────────────────────┘ │
-│  Services: GraphqlApiService, LinkService, LogCollectorService      │
-│  Interceptors: ErrorInterceptor (401 → redirect)                    │
-└──────────────────────────┬──────────────────────────────────────────┘
-                           │ HTTP (session cookie, withCredentials)
-                           ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                    Quarkus Backend (:8080)                           │
-│  ┌──────────────┐  ┌──────────────────┐  ┌───────────────────────┐ │
-│  │ OIDC Auth    │  │ GraphQL API      │  │ REST Endpoints        │ │
-│  │ /login       │  │ /api/v1/graphql  │  │ /hello, /user, /home  │ │
-│  │ /logout      │  │ UserGraphQLApi   │  │ /api/v1/logs          │ │
-│  │              │  │ LinkGraphQLRes.  │  │                       │ │
-│  └──────┬───────┘  └───────┬──────────┘  └───────────────────────┘ │
-│         │                  │                                        │
-│  ┌──────▼───────┐  ┌──────▼──────────┐  ┌───────────────────────┐ │
-│  │ Login Policy │  │ Link Service    │  │ CloudWatch Log Svc    │ │
-│  │ (disallow    │  │ (DynamoDB CRUD) │  │ (log ingestion)       │ │
-│  │  usernames)  │  │                 │  │                       │ │
-│  └──────────────┘  └───────┬─────────┘  └───────────┬───────────┘ │
-└─────────────────────────────┼────────────────────────┼──────────────┘
-                              │                        │
-          ┌───────────────────┼────────────────────────┼──────┐
-          │                 AWS Cloud                          │
-          │  ┌──────────────┐ ┌──────────┐ ┌───────────────┐  │
-          │  │ Cognito User │ │ DynamoDB │ │ CloudWatch    │  │
-          │  │ Pool + Admin │ │          │ │ Logs          │  │
-          │  │ API          │ │          │ │               │  │
-          │  └──────────────┘ └──────────┘ └───────────────┘  │
-          └────────────────────────────────────────────────────┘
-```
+![System Architecture](docs/architecture-system.png)
+
+### Component Architecture
+
+![Component Architecture](docs/architecture-components.png)
+
+### CI/CD Pipeline
+
+![CI/CD Pipeline](docs/architecture-cicd.png)
 
 ### Component Summary
 
