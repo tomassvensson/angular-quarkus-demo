@@ -1,0 +1,56 @@
+graph TD
+    Push["Git Push / PR"] --> BackendBuild
+    Push --> BackendTests
+    Push --> FrontendBuild
+    Push --> FrontendTests
+    Push --> E2E
+    Push --> Security
+    Push --> CodeQL
+    Push --> TerraformLint
+
+    subgraph CI["GitHub Actions CI/CD Pipeline"]
+        BackendBuild["🔨 Backend Build<br/>Maven package -DskipTests"]
+        BackendTests["🧪 Backend Tests<br/>Maven test<br/>Testcontainers + Keycloak"]
+        FrontendBuild["🔨 Frontend Build<br/>npm ci + ng build"]
+        FrontendTests["🧪 Frontend Tests<br/>Vitest (347 tests)<br/>Code Coverage"]
+        
+        subgraph E2EFlow["E2E Test Suite"]
+            direction TB
+            E2E["🎭 E2E Tests"]
+            KeycloakStart["Start Keycloak<br/>Docker Compose"]
+            BackendStart["Start Quarkus<br/>Dev Mode"]
+            Playwright["Playwright Tests<br/>Chromium"]
+            ZAP["OWASP ZAP<br/>DAST Scan"]
+            KeycloakStart --> BackendStart
+            BackendStart --> Playwright
+            BackendStart --> ZAP
+        end
+
+        subgraph SecurityFlow["Security Scans"]
+            direction TB
+            Security["🔒 Security"]
+            Trivy["Trivy FS Scan<br/>CVE Detection"]
+            SonarFE["SonarCloud Frontend<br/>SAST + Coverage"]
+            SonarBE["SonarCloud Backend<br/>SAST + Coverage"]
+        end
+
+        CodeQL["🔍 CodeQL SAST<br/>Java, JS/TS, Actions"]
+        TerraformLint["📐 Terraform Lint<br/>fmt, validate, tflint,<br/>tfsec, Checkov"]
+    end
+
+    BackendTests --> Codecov["📊 Codecov"]
+    FrontendTests --> Codecov
+
+    classDef trigger fill:#424242,stroke:#212121,color:white
+    classDef build fill:#1565C0,stroke:#0D47A1,color:white
+    classDef test fill:#2E7D32,stroke:#1B5E20,color:white
+    classDef security fill:#E65100,stroke:#BF360C,color:white
+    classDef analysis fill:#6A1B9A,stroke:#4A148C,color:white
+    classDef report fill:#00695C,stroke:#004D40,color:white
+
+    class Push trigger
+    class BackendBuild,FrontendBuild build
+    class BackendTests,FrontendTests,E2E,Playwright test
+    class Security,Trivy,SonarFE,SonarBE,ZAP,KeycloakStart,BackendStart security
+    class CodeQL,TerraformLint analysis
+    class Codecov report

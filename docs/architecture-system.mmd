@@ -1,0 +1,73 @@
+graph TB
+    subgraph Browser["🌐 Browser"]
+        Angular["Angular 21 + Tailwind CSS<br/>SSR with Express/Hono"]
+        Pages["Pages: Home, My Lists,<br/>Public Lists, Profile,<br/>Admin Users, Vote Analytics,<br/>Notifications"]
+        Services["Services: GraphQL API,<br/>Link, Social, i18n,<br/>Log Collector, Auth"]
+    end
+
+    subgraph Backend["⚙️ Quarkus Backend :8080"]
+        direction TB
+        OIDC["OIDC Auth<br/>/login, /logout"]
+        GraphQL["GraphQL API<br/>/api/v1/graphql"]
+        REST["REST Endpoints<br/>/api/v1/logs, /health"]
+        WebSocket["WebSocket<br/>Real-time Notifications"]
+        SecurityFilter["Security Headers Filter<br/>CSP, HSTS, X-Frame"]
+        
+        subgraph ServicesLayer["Business Services"]
+            LinkSvc["LinkService<br/>Lists/Links CRUD"]
+            CognitoSvc["CognitoAdminService<br/>User Management"]
+            VoteSvc["VoteService<br/>Star Ratings"]
+            CommentSvc["CommentService<br/>Social Comments"]
+            NotifSvc["NotificationService<br/>User Notifications"]
+            AuditSvc["AuditService<br/>Audit Logging"]
+            ProfileSvc["ProfilePictureService<br/>S3 Upload/Download"]
+            CloudWatchSvc["CloudWatchLogService<br/>Log Ingestion"]
+            SettingsSvc["UserSettingsService<br/>Dark Mode, i18n"]
+            LoginPolicy["LoginPolicyService<br/>Username Validation"]
+            AlarmSvc["CloudWatchAlarmService<br/>Infrastructure Alarms"]
+        end
+    end
+
+    subgraph AWS["☁️ AWS Cloud"]
+        Cognito["Amazon Cognito<br/>User Pool + Admin API"]
+        DynamoDB["Amazon DynamoDB<br/>Lists, Links, Votes,<br/>Comments, Notifications,<br/>Audit, UserSettings"]
+        S3["Amazon S3<br/>Profile Pictures"]
+        CloudWatch["Amazon CloudWatch<br/>Logs + Alarms"]
+    end
+
+    subgraph DevTest["🧪 Dev/Test (Containers)"]
+        Keycloak["Keycloak<br/>OIDC Provider"]
+        LocalDynamo["DynamoDB Local<br/>via Testcontainers"]
+        LocalStack["LocalStack<br/>S3, CloudWatch"]
+    end
+
+    Angular -->|"HTTP + Session Cookie"| OIDC
+    Angular -->|"GraphQL Queries/Mutations"| GraphQL
+    Angular -->|"REST API"| REST
+    Angular -->|"WebSocket"| WebSocket
+
+    OIDC -->|"Production"| Cognito
+    OIDC -->|"Dev/Test"| Keycloak
+    
+    LinkSvc --> DynamoDB
+    VoteSvc --> DynamoDB
+    CommentSvc --> DynamoDB
+    NotifSvc --> DynamoDB
+    AuditSvc --> DynamoDB
+    SettingsSvc --> DynamoDB
+    CognitoSvc --> Cognito
+    ProfileSvc --> S3
+    CloudWatchSvc --> CloudWatch
+    AlarmSvc --> CloudWatch
+    LinkSvc -->|"Dev/Test"| LocalDynamo
+
+    classDef browser fill:#4285F4,stroke:#1a73e8,color:white
+    classDef backend fill:#4695EB,stroke:#2d7bd5,color:white
+    classDef aws fill:#FF9900,stroke:#cc7a00,color:white
+    classDef devtest fill:#34A853,stroke:#2d8f47,color:white
+    
+    class Angular,Pages,Services browser
+    class OIDC,GraphQL,REST,WebSocket,SecurityFilter backend
+    class LinkSvc,CognitoSvc,VoteSvc,CommentSvc,NotifSvc,AuditSvc,ProfileSvc,CloudWatchSvc,SettingsSvc,LoginPolicy,AlarmSvc backend
+    class Cognito,DynamoDB,S3,CloudWatch aws
+    class Keycloak,LocalDynamo,LocalStack devtest
